@@ -12,6 +12,10 @@
 ## Memcached
 ### How it works
 
+
+
+### Design and architecture
+
 Memcached is made up of four main components. These components allow the client and the server to work together in order to deliver cached data as efficiently as possible:
 
 * **Client software** - which is given a list of available Memcached servers
@@ -19,11 +23,9 @@ Memcached is made up of four main components. These components allow the client 
 * **Server software** - stores values and their keys into an internal hash table
 * **LRU** - determines when to throw out old data or reuse memory
 
-### Design and architecture
-
 ## Installation and usage
 
-You need *Ruby 2.0.0*. Other versions may work, but are not guaranteed.
+You need *Ruby v2.0.0* installed.
 
 ## Tests
 
