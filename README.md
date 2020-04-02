@@ -6,7 +6,7 @@
 * [Installation](#installation)
 * [Usage](#usage)
   * [Server](#server)
-  * [Client demo](#client-demo)
+  * [Client demo and sample commands](#client-demo)
   * [Tests](#test)
 * [Further resources](#further-resources)
 
@@ -39,7 +39,7 @@ You need *Ruby v2.0.0* installed.
   
 ### Tests
 
-## Further resources
+## Resources
 *  [Memcached wiki](https://github.com/memcached/memcached/wiki)
 *  [About Memcached](http://memcached.org/about)
 *  [Full list of commands](http://lzone.de/cheat-sheet/memcached)
