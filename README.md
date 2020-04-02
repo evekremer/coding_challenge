@@ -27,14 +27,17 @@ You need *Ruby v2.0.0* installed.
 ### Server
 `ruby server.rb <socket_address> <socket_port>`
   
-  Optional <socket_address> and <socket_port> arguments determine the address where the server will be listening. `localhost:9999` is assigned by default.
+  Optional *<socket_address>* and *<socket_port>* arguments determine the address where the server will be listening. `localhost:9999` is assigned by default.
 
 ### Client demo and sample commands
 
-  * `ruby client_demo.rb <socket_address> <socket_port>` is a short demonstration of a client-server interaction, with their corresponding actions and commands sent and received.
-  * `ruby client.rb <socket_address> <socket_port>` allows to send requests to server and receive server responses through the command line.
+  * `ruby client_demo.rb <socket_address> <socket_port>`
+  Is a short demonstration of a client-server interaction, with their corresponding actions and commands sent and received.
+ 
+  * `ruby client.rb <socket_address> <socket_port>`
+  Allows to send requests to server and receive server responses through the command line.
   
-  Optional <socket_address> and <socket_port> arguments determine the address for the TCP socket of the client. `localhost:9999` is assigned by default.
+  Optional *<socket_address>* and *<socket_port>* arguments determine the address for the TCP socket of the client. `localhost:9999` is assigned by default.
   
   
 ### Tests
