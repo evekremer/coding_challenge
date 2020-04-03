@@ -6,9 +6,9 @@
 * [Installation](#installation)
 * [Usage](#usage)
   * [Server](#server)
-  * [Client demo and sample commands](#client-demo)
+  * [Client demo and sample commands](#client-demo-and-sample-commands)
   * [Tests](#test)
-* [Further resources](#further-resources)
+* [Resources](#resources)
 
 ## About Memcached
 
@@ -32,9 +32,11 @@ You need *Ruby v2.0.0* installed.
 ### Client demo and sample commands
 
   * `ruby client_demo.rb <socket_address> <socket_port>`
-  Is a short demonstration of a client-server interaction, with their corresponding actions and commands sent and received.
+  
+  Provides a short demonstration of a client-server interaction, with their corresponding commands sent and received and their corresponding actions.
  
   * `ruby client.rb <socket_address> <socket_port>`
+  
   Allows to send requests to server and receive server responses through the command line.
   
   Optional *<socket_address>* and *<socket_port>* arguments determine the address for the TCP socket of the client. `localhost:9999` is assigned by default.
@@ -43,7 +45,7 @@ You need *Ruby v2.0.0* installed.
 ### Tests
 
 ## Resources
-*  [Memcached wiki](https://github.com/memcached/memcached/wiki)
-*  [About Memcached](http://memcached.org/about)
-*  [Full list of commands](http://lzone.de/cheat-sheet/memcached)
-*  [The protocol specification](https://github.com/memcached/memcached/blob/master/doc/protocol.txt)
+*  Memcached wiki - https://github.com/memcached/memcached/wiki
+*  About Memcached - http://memcached.org/about
+*  Full list of commands - http://lzone.de/cheat-sheet/memcached
+*  The protocol specification - https://github.com/memcached/memcached/blob/master/doc/protocol.txt
