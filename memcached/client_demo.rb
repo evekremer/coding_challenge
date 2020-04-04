@@ -126,8 +126,8 @@ module Memcached
                     #       key5" => "abcd1234"}
                 puts "\n"
                 
-                #### Check and set (CAS) command
-                puts "\n#######     Check and set (CAS) command\n\n"
+                #### CAS command
+                puts "\n#######     CAS command\n\n"
                 
                 puts ">> cas key6 0 199000 9 1\r\n"
                 puts ">> memcached\r\n"
@@ -141,11 +141,15 @@ module Memcached
                 @socket.puts "set key6 0 199000 9\r\n"
                 @socket.puts "memcached\r\n"
                 puts "#{@socket.gets}\n"
-                    #=> STORED with unique_cas_key = 1
+                    #=> STORED
 
                 puts ">> gets key6\r\n"
                 @socket.puts "gets key6\r\n"
-                3.times {puts "#{@socket.gets}"}
+                reply = @socket.gets
+                cas_key_ini = get_cas_key(reply)
+                
+                puts "#{reply}"
+                2.times {puts "#{@socket.gets}"}
                 puts "\n"
 
                 puts ">> set key6 6 80000 13\r\n"
@@ -153,23 +157,27 @@ module Memcached
                 @socket.puts "set key6 6 80000 13\r\n"
                 @socket.puts "memcached_2.0\r\n"
                 puts "#{@socket.gets}\n"
-                    #=> STORED and unique_cas_key is now 2
+                    #=> STORED and unique_cas_key is updated
 
-                puts ">> cas key6 0 199000 13 1\r\n"
+                puts ">> cas key6 0 199000 13 #{cas_key_ini}\r\n"
                 puts ">> memcached_2.1\r\n"
-                @socket.puts "cas key6 0 199000 13 1\r\n"
+                @socket.puts "cas key6 0 199000 13 #{cas_key_ini}\r\n"
                 @socket.puts "memcached_2.1\r\n"
                 puts "#{@socket.gets}\n"
                     #=> EXISTS - the item has been modified since last fetch
 
                 puts ">> gets key6\r\n"
                 @socket.puts "gets key6\r\n"
-                3.times {puts "#{@socket.gets}"}
+                reply = @socket.gets
+                cas_key_new = get_cas_key(reply)
+                
+                puts "#{reply}"
+                2.times {puts "#{@socket.gets}"}
                 puts "\n"
 
-                puts ">> cas key6 0 199000 13 2\r\n"
+                puts ">> cas key6 0 199000 13 #{cas_key_new}\r\n"
                 puts ">> memcached_2.1\r\n"
-                @socket.puts "cas key6 0 199000 13 2\r\n"
+                @socket.puts "cas key6 0 199000 13 #{cas_key_new}\r\n"
                 @socket.puts "memcached_2.1\r\n"
                 puts "#{@socket.gets}\n"
                     #=> STORED
@@ -233,6 +241,12 @@ module Memcached
                 # e.backtrace
                 @socket.close
             end
+        end
+
+        def get_cas_key(reply)
+            cas_key = reply.split[4]
+            cas_key = cas_key.delete "\r\n"
+            cas_key
         end
     end
 

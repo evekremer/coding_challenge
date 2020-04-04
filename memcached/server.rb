@@ -21,8 +21,6 @@ module Memcached
 
         def initialize(socket_address, socket_port)
             @server_socket = TCPServer.open(socket_address, socket_port)
-            # @connections_details = Hash.new
-            # @connections_details[:server] = @server_socket
             @cache = Hash.new
             @mutex_readers = Mutex.new
             @mutex_writers = Mutex.new
@@ -50,7 +48,7 @@ module Memcached
                 loop do
                     command = connection.gets
                     command_ending = command[-2..-1] || command
-                    raise ArgumentError, "Commands must be terminated by \r\n" unless command_ending == "\r\n"
+                    raise ArgumentError, "Commands must be terminated by '\r\n'" unless command_ending == "\r\n"
 
                     command = command.delete "\r\n"
                     command_split = command.split(/ /)
@@ -79,7 +77,7 @@ module Memcached
                         store_new_item(key, flags, exptime, length, data_block)
                         message = STORED_MSG
 
-                    when "add", "replace" # [Add / Replace]: store item if the key [does / does not] exist
+                    when "add", "replace"
                         # Read shared cache
                         start_reading
                         cache_has_key = @cache.has_key?(key)
@@ -232,7 +230,7 @@ module Memcached
 
         end
 
-        private # -------------------------------
+        private
 
         def start_reading
             @mutex_readers.lock()
@@ -254,7 +252,7 @@ module Memcached
         
         def update_cas_key
             @unique_cas_key += 1
-            # @unique_cas_key = @unique_cas_key % MAX_CAS_KEY
+            @unique_cas_key = (@unique_cas_key).modulo(MAX_CAS_KEY)
         end
 
         def validate_parameters(parameters)

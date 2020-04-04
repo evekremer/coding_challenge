@@ -41,29 +41,36 @@ class BaseTest < Test::Unit::TestCase
   end
 
   def send_get_cmd(key, gets = false, length = false)
-    cmd = gets ? "gets" : "get" + " #{key}\r\n"
+    cmd = (gets ? "gets" : "get") + " #{key}\r\n"
     @socket.puts cmd
 
     #Get reply
     reply = ""
     reply += @socket.gets
+    puts "#{reply}"
     if reply != END_MSG
-      if length
-        reply += @socket.read(length+2)
-      else
-        reply += @socket.gets
-      end
+      reply += length ? @socket.read(length+2) : @socket.gets
       reply += @socket.gets
     end
     reply
   end
 
-  def expected_get_response(key, flags, length, value, gets = false, unique_cas_key = false)
+  def expected_get_response(key, flags, length, value, unique_cas_key = false)
     reply = "VALUE #{key} #{flags} #{length}"
-    reply += gets ? " #{unique_cas_key}" : ""
+    reply += unique_cas_key ? " #{unique_cas_key}" : ""
     reply += "\r\n#{value}\r\n"
     reply += END_MSG
     reply
+  end
+
+  # Returns cas key of an existing key
+  def get_cas_key(key)
+    @socket.puts "gets #{key}\r\n"
+    reply = @socket.gets
+    cas_key = reply.split[4]
+    cas_key = cas_key.delete "\r\n"
+    2.times {@socket.gets}
+    cas_key.to_i
   end
 
   # def expected_multi_get_response(key, flags, length, value, gets = false, unique_cas_key = false)
@@ -73,11 +80,6 @@ class BaseTest < Test::Unit::TestCase
   #   reply += END_MSG
   #   reply
   # end
-
-  def get_cas_key(key)
-    send_get_cmd([key], true)
-    
-  end
 
   def key
     "key_" + caller.first[/.*[` ](.*)'/, 1]
