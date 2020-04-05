@@ -227,9 +227,7 @@ module Memcached
                     #=> CLIENT_ERROR
 
                 puts ">> invalid_cmd_name key9 3 9000 5\r\n"
-                puts ">> value\r\n"
                 @socket.puts "invalid_cmd_name key9 3 9000 5\r\n"
-                @socket.puts "value\r\n"
                 puts "#{@socket.gets}\n"
                     #=> ERROR
 
