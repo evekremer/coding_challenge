@@ -18,6 +18,7 @@ module Memcached
         MAX_VALUE_LENGTH = (2 ** 20) - 1 # 1MB
         MAX_CAS_KEY = (2 ** 64) - 1 # 64-bit unsigned int
         MAX_CACHE_ITEMS = 64
+        BUFFER_MAX_LENGTH = 8148
 
         def initialize(socket_address, socket_port)
             @server_socket = TCPServer.open(socket_address, socket_port)
@@ -47,31 +48,29 @@ module Memcached
             begin
                 loop do
                     command = connection.gets
-                    command_ending = command[-2..-1] || command
-                    raise ArgumentError, "Commands must be terminated by '\r\n'" unless command_ending == "\r\n"
+                    command = validate_termination(command)
 
-                    command = command.delete "\r\n"
                     command_split = command.split(/ /)
                     command_name = command_split.shift
 
                     if ["set", "add", "replace", "prepend", "append", "cas"].include? command_name
                         key, flags, exptime, length = command_split
-                        
-                        if is_unsigned_i(length)
-                            data_block = connection.read(length.to_i)
-                            connection.gets
-                        else
-                            connection.gets
-                            raise TypeError, '<length> is not an unsigned integer'
+                        data_block = connection.read_nonblock(BUFFER_MAX_LENGTH)
+
+                        new_data = data_block
+                        while new_data.length() == BUFFER_MAX_LENGTH && data_block.length() <= MAX_VALUE_LENGTH+2
+                            new_data = connection.read_nonblock(BUFFER_MAX_LENGTH)
+                            data_block += new_data
                         end
-
-                        raise ArgumentError, "<length> (#{length}) is not equal to the length of the item's value (#{data_block.length()})" unless data_block.length() == length.to_i
                         
-                        # Check if the optional 'noreply' parameter is included
-                        max_length = (command_name == "cas" ? 6 : 5)
-                        no_reply = has_no_reply(command_split, max_length)
+                        raise TypeError, "<value> has more than #{MAX_VALUE_LENGTH} characters" unless data_block.length() <= MAX_VALUE_LENGTH+2
+                        data_block = validate_termination(data_block) # Check data_block terminates by "\r\n"
+                        
+                        # Check if the optional 'noreply' parameter is included in 'command'
+                        max_num_parameters = (command_name == "cas" ? 6 : 5)
+                        no_reply = has_no_reply(command_split, max_num_parameters)
                     end
-
+                    
                     case command_name
                     when "set"
                         store_new_item(key, flags, exptime, length, data_block)
@@ -155,13 +154,13 @@ module Memcached
             validate_parameters([ ["value", value.length() + prev_length.to_i] ])
 
             if cache_has_key # the key exists in the Memcached server          
-                @mutex_writers.lock()
+                @mutex_writers.synchronize{
                     # Write shared cache
                     @cache[key][2] = @cache[key][2].to_i + length.to_i # Add 'length' to the previous length
                     @cache[key][3] = ( pre ? value.concat(@cache[key][3]) : @cache[key][3].concat(value))
                     @cache[key][4] = @unique_cas_key # Update cas key
                     update_cas_key
-                @mutex_writers.unlock()
+                }
                 message = STORED_MSG
             else
                 message = NOT_STORED_MSG
@@ -186,11 +185,11 @@ module Memcached
                 finish_reading
 
                 #Delete from cache if the item is expired
-                if expdate.to_i != 0 && Time.now >= expdate             
-                    @mutex_writers.lock()
+                if expdate.to_i != 0 && Time.now >= expdate 
+                    @mutex_writers.synchronize{
                         # Write shared cache
                         @cache.delete(key)
-                    @mutex_writers.unlock()
+                    }
                 
                 elsif cache_has_key
                     reply += "VALUE #{key} #{flags} #{length}"
@@ -222,32 +221,37 @@ module Memcached
             # end
             # stop_reading
 
-            @mutex_writers.lock()
+            @mutex_writers.synchronize {
                 # Write shared cache
                 @cache[key] = flags, expdate, length, value, @unique_cas_key
                 update_cas_key
-            @mutex_writers.unlock()
-
+            } 
         end
 
         private
 
+        def validate_termination(command)
+            command_ending = command[-2..-1] || command
+            raise ArgumentError, "Commands must be terminated by '\r\n'" unless command_ending == "\r\n"
+            command[0..-3] || command
+        end
+
         def start_reading
-            @mutex_readers.lock()
+            @mutex_readers.synchronize{
                 @readers_counter += 1
                 if(@readers_counter == 1)
                     @mutex_writers.lock()
                 end
-            @mutex_readers.unlock()
+            }
         end
 
         def finish_reading
-            @mutex_readers.lock()
+            @mutex_readers.synchronize{
                 @readers_counter -= 1
                 if(@readers_counter == 0)
                     @mutex_writers.unlock()
                 end
-            @mutex_readers.unlock()
+            }
         end
         
         def update_cas_key
@@ -287,7 +291,7 @@ module Memcached
                 if command_split[max_length-1] == "noreply"
                     no_reply = true
                 else # incorrect syntax
-                    raise ArgumentError, "A 'noreply' was expected as the #{max_length+1}th argument, but #{command_split[max_length-1]} was received"
+                    raise ArgumentError, "A 'noreply' was expected as the #{max_length+1}th argument, but '#{command_split[max_length-1]}' was received"
                 end
             end
             no_reply

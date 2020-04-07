@@ -3,46 +3,52 @@ require_relative "../test_helper"
 class ConcurrencyTest < BaseTest
 
   def test_multiple_threads_set_get
-    Array.new(12) do |n|
+    Array.new(10) do |n|
       Thread.new do
         # Set and get: (key, value) = (k1<n>, v1<n>)
-        socket.puts "set k1#{n} 0 1000 #{"k1#{n}".length()} noreply\r\n"
-        socket.puts "v1#{n}\r\n"
-        socket.puts "get k1#{n}"
-      
-        assert_equal "VALUE k1#{n} 0 #{"k1#{n}".length()}\r\n", socket.gets
-        assert_equal "v1#{n}\r\n", socket.gets
-        assert_equal END_MSG, socket.gets
+        s = socket
+        s.puts "set k1_#{n} 2 1000 #{"v1_#{n}".length()}\r\n"
+        s.puts "v1_#{n}\r\n"
+        assert_equal STORED_MSG, s.gets
+
+        s.puts "get k1_#{n}\r\n"
+        assert_equal "VALUE k1_#{n} 2 #{"v1_#{n}".length()}\r\n", s.gets
+        assert_equal "v1_#{n}\r\n", s.gets
+        assert_equal END_MSG, s.gets
 
         # Set and get: (key, value) = (k2<n>, v2<n>)
-        socket.puts "set k2#{n} 0 1000 #{"k2#{n}".length()} noreply\r\n"
-        socket.puts "v2#{n}\r\n"
-        socket.puts "get k2#{n}"
+        s.puts "set k2_#{n} 2 1000 #{"v2_#{n}".length()}\r\n"
+        s.puts "v2_#{n}\r\n"
+        assert_equal STORED_MSG, s.gets
 
-        assert_equal "VALUE k2#{n} 0 #{"k2#{n}".length()}\r\n", socket.gets
-        assert_equal "v2#{n}\r\n", socket.gets
-        assert_equal END_MSG, socket.gets
+        s.puts "get k2_#{n}\r\n"
+        assert_equal "VALUE k2_#{n} 2 #{"v2_#{n}".length()}\r\n", s.gets
+        assert_equal "v2_#{n}\r\n", s.gets
+        assert_equal END_MSG, s.gets
       end
     end.each(&:join)
   end
 
   def test_threads_with_get_multi_keys
-    Array.new(12) do |n|
+    Array.new(5) do |n|
       Thread.new do
-        # Set 50 items with (key, value) = (test#{n}#{i}, v#{n})
-        50.times { |i|
-          socket.puts "set test#{n}#{i} 0 1000 #{"test#{n}#{i}".length()} noreply\r\n"
-          socket.puts "v#{n}\r\n"
-          keys += " test#{n}#{i}"
+        s = socket
+        keys = ""
+        # Set 20 items with (key, value) = (test#{n}#{i}, v#{n})
+        20.times { |i|
+          s.puts "set test#{n}_#{i} 0 500 #{"v#{n}".length()}\r\n"
+          s.puts "v#{n}\r\n"
+          assert_equal STORED_MSG, s.gets
+          keys += " test#{n}_#{i}"
         }
-        
+
         # Get all the previously set keys
-        socket.puts "get" + keys + "\r\n"
-        50.times { |i|
-          assert_equal "VALUE test#{n}#{i} 0 #{"test#{n}#{i}".length()}\r\n", socket.gets
-          assert_equal "v#{n}\r\n", socket.gets
+        s.puts "get" + keys + "\r\n"
+        20.times { |i|
+          assert_equal "VALUE test#{n}_#{i} 0 #{"v#{n}".length()}\r\n", s.gets
+          assert_equal "v#{n}\r\n", s.gets
         }
-        assert_equal END_MSG, socket.gets
+        assert_equal END_MSG, s.gets
       end
     end.each(&:join)
   end

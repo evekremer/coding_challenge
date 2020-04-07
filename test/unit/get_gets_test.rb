@@ -12,7 +12,8 @@ class GetGetsTest < BaseTest
     5.times{ |i|
       key_ = "key#{i}"
       value_ = "value#{i}"
-      send_storage_cmd("set", key_, 2, 8000, value_.length(), false, value_, true)
+      send_storage_cmd("set", key_, 2, 8000, value_.length(), false, value_)
+      assert_equal STORED_MSG, socket.gets
       
       reply = send_get_cmd(key_)
       exp_reply = expected_get_response(key_, 2, value_.length(), value_, false)
@@ -48,7 +49,9 @@ class GetGetsTest < BaseTest
 
     5.times{ |i|
       key_ = "#{key}#{i}"
-      send_storage_cmd("set", key_, 1, 1000, 0, false, nil, true)
+      send_storage_cmd("set", key_, 1, 1000, 0, false, nil)
+      assert_equal STORED_MSG, socket.gets
+      
       exp_reply_multi += expected_get_response(key_, 1, 0, nil, false, true)
       keys[i] = key_
     }
@@ -62,10 +65,14 @@ class GetGetsTest < BaseTest
   def test_some_missing_keys_multi_get
     exp_reply_multi = ""
 
-    send_storage_cmd("set", "#{key}1", 3, 300, value.length(), false, value, true)
+    send_storage_cmd("set", "#{key}1", 3, 300, value.length(), false, value)
+    assert_equal STORED_MSG, socket.gets
+
     exp_reply_multi += expected_get_response("#{key}1", 3, value.length(), value, false, true)
 
-    send_storage_cmd("set", "#{key}3", 4, 500, value.length(), false, value, true)
+    send_storage_cmd("set", "#{key}3", 4, 500, value.length(), false, value)
+    assert_equal STORED_MSG, socket.gets
+
     exp_reply_multi += expected_get_response("#{key}3", 4, value.length(), value)
 
     socket.puts "get #{key}1 #{key}2 #{key}3 #{key}4 #{key}5\r\n"
@@ -74,7 +81,7 @@ class GetGetsTest < BaseTest
     assert_equal exp_reply_multi, reply
   end
 
-###########     Gets     ###########
+  ###########     Gets     ###########
 
   def test_simple_multi_gets
     # Set and gets 5 items
@@ -85,7 +92,9 @@ class GetGetsTest < BaseTest
       key_ = "#{i}key"
       value_ = "#{i}value"
 
-      send_storage_cmd("set", key_, 5, 500, value_.length(), false, value_, true)
+      send_storage_cmd("set", key_, 5, 500, value_.length(), false, value_)
+      assert_equal STORED_MSG, socket.gets
+
       reply = send_get_cmd(key_, true) # send gets for key_ and read reply
       
       ck =  get_cas_key(key_)
@@ -124,7 +133,9 @@ class GetGetsTest < BaseTest
 
     5.times{ |i|
       key_ = "#{key}#{i}"
-      send_storage_cmd("set", key_, 1, 1000, 0, false, nil, true)
+      send_storage_cmd("set", key_, 1, 1000, 0, false, nil)
+      assert_equal STORED_MSG, socket.gets
+
       exp_reply_multi += expected_get_response(key_, 1, 0, nil, get_cas_key(key_), true)
       keys[i] = key_
     }
@@ -138,10 +149,14 @@ class GetGetsTest < BaseTest
   def test_some_missing_keys_multi_gets
     exp_reply_multi = ""
 
-    send_storage_cmd("set", "#{key}1", 3, 300, value.length(), false, value, true)
+    send_storage_cmd("set", "#{key}1", 3, 300, value.length(), false, value)
+    assert_equal STORED_MSG, socket.gets
+
     exp_reply_multi += expected_get_response("#{key}1", 3, value.length(), value, get_cas_key("#{key}1"), true)
 
-    send_storage_cmd("set", "#{key}3", 4, 500, value.length(), false, value, true)
+    send_storage_cmd("set", "#{key}3", 4, 500, value.length(), false, value)
+    assert_equal STORED_MSG, socket.gets
+
     exp_reply_multi += expected_get_response("#{key}3", 4, value.length(), value, get_cas_key("#{key}3"))
 
     socket.puts "gets #{key}1 #{key}2 #{key}3 #{key}4 #{key}5\r\n"

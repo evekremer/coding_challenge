@@ -52,8 +52,9 @@ class PreAppendTest < BaseTest
         # command with noreply
     
         # Get the item and assert reply
-        # Note flags are ignored in append/prepend cmds
         reply = send_get_cmd(key)
+        
+        # Note flags are ignored in append/prepend cmds
         assert_equal expected_get_response(key, 3, (value + value2).length(), value + value2), reply
     end
 
@@ -101,7 +102,7 @@ class PreAppendTest < BaseTest
     
         value2 = "new_value"
         send_storage_cmd("prepend", key, 4, 400, value2.length(), false, value2, true)
-        #command with noreply
+        sleep(2)
     
         # Get the item and assert reply
         # Note flags are ignored in append/prepend cmds
@@ -109,41 +110,43 @@ class PreAppendTest < BaseTest
         assert_equal expected_get_response(key, 3, (value2 + value).length(), value2 + value), reply
     end
 
-    # ###########     Test invalid parameters     ###########
-################################# FIX ! ###################################################################
-    # def test_wrong_length_parameter
-    #     send_storage_cmd("set", key, 2, 3000, value.length(), false, value, false)
-    #     assert_equal STORED_MSG, socket.gets
+    ###########     Test invalid parameters     ###########
 
-    #     # Try appending / prepending with invalid length parameter
-    #     send_storage_cmd("prepend", key, 2, 3000, "start".length()+5, false, "start", false)
-    #     assert_equal "CLIENT_ERROR ...", socket.gets
-        
-    #     send_storage_cmd("append", key, 2, 3000, "end".length()+5, false, "end", false)
-    #     assert_equal "CLIENT_ERROR ...", socket.gets
-
-    #     # Get the item and assert reply with original value without changes
-    #     # send_get_cmd([key])
-    #     # reply = ""
-    #     # 3.times { reply += "#{socket.gets}" }
-    #     # assert_equal expected_get_response(key, 2, value.length(), value), reply
-    # end
-##########################################################################################
-    def test_value_too_big
+    def test_wrong_length_parameter
         send_storage_cmd("set", key, 2, 3000, value.length(), false, value, false)
         assert_equal STORED_MSG, socket.gets
 
-        # Prepend / append a value that, combined with the existing value, exceeds max length
-        v2 = "b" * (MAX_VALUE_LENGTH - value.length() + 1) # more than 1MB long
-        send_storage_cmd("prepend", key, 2, 3000, v2.length(), false, v2, false)
-        assert_equal "CLIENT_ERROR <value> has more than #{MAX_VALUE_LENGTH} characters\r\n", socket.gets
-
-        send_storage_cmd("append", key, 2, 3000, v2.length(), false, v2, false)
-        assert_equal "CLIENT_ERROR <value> has more than #{MAX_VALUE_LENGTH} characters\r\n", socket.gets
+        # Try prepending with bigger length parameter than the actual length
+        v1 = "start"
+        send_storage_cmd("prepend", key, 2, 3000, v1.length()+5, false, v1, false)
+        assert_equal "CLIENT_ERROR <length> (#{v1.length()+5}) is not equal to the length of the item's value (#{v1.length()})\r\n", socket.gets
         
+        # Try appending with smaller length parameter than the actual length
+        v2 = "end"
+        send_storage_cmd("append", key, 2, 3000, v2.length()-1, false, v2, false)
+        assert_equal "CLIENT_ERROR <length> (#{v2.length()-1}) is not equal to the length of the item's value (#{v2.length()})\r\n", socket.gets
+
         # Get the item and assert reply without changes
         reply = send_get_cmd(key)
         assert_equal expected_get_response(key, 2, value.length(), value), reply
-    end  
+    end
+
+    # def test_value_too_long_preapp
+    #     send_storage_cmd("set", key, 2, 3000, value.length(), false, value, false)
+    #     assert_equal STORED_MSG, socket.gets
+
+    #     # Prepend / append a value that, combined with the existing value, exceeds max length
+    #     v2 = "b" * (MAX_VALUE_LENGTH - value.length() + 1) # more than 1MB long
+        
+    #     send_storage_cmd("prepend", key, 2, 3000, v2.length(), false, v2, false)
+    #     assert_equal "CLIENT_ERROR <value> has more than #{MAX_VALUE_LENGTH} characters\r\n", socket.gets
+
+    #     send_storage_cmd("append", key, 2, 3000, v2.length(), false, v2, false)
+    #     assert_equal "CLIENT_ERROR <value> has more than #{MAX_VALUE_LENGTH} characters\r\n", socket.gets
+        
+    #     # Get the item and assert reply without changes
+    #     reply = send_get_cmd(key)
+    #     assert_equal expected_get_response(key, 2, value.length(), value), reply
+    # end  
 end
 

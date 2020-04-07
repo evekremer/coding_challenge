@@ -18,6 +18,14 @@ class ErrorStatesTest < BaseTest
         assert_equal "CLIENT_ERROR Commands must be terminated by '\r\n'\r\n", reply
     end
 
+    def test_bad_termination_datablock
+        socket.puts "set key 9 89 5\r\n"
+        socket.puts "value"
+        reply = ""
+        2.times { reply += socket.gets }
+        assert_equal "CLIENT_ERROR Commands must be terminated by '\r\n'\r\n", reply
+    end
+
     def test_empty_string_cmd
         socket.puts ""
         reply = ""
@@ -38,8 +46,30 @@ class ErrorStatesTest < BaseTest
         2.times { reply += socket.gets }
         assert_equal "CLIENT_ERROR Commands must be terminated by '\r\n'\r\n", reply
     end
+
+    def test_empty_command_1
+        socket.puts "\r\n"
+        socket.puts "value\r\n"
+        assert_equal INVALID_COMMAND_NAME_MSG, socket.gets
+    end
+
+    def test_empty_command_2
+        socket.puts ""
+        socket.puts "value\r\n"
+        reply = ""
+        2.times { reply += socket.gets }
+        assert_equal "CLIENT_ERROR Commands must be terminated by '\r\n'\r\n", reply
+    end
     
-    ####### Key and value that exceed max length
+    def test_duplicate_command
+        socket.puts "set key 9 89 5\r\nset key 9 89 5\r\n"
+        socket.puts "value\r\n"
+        reply = socket.gets
+        #Takes 'set key 9 89 5\r\nvalue\r\n' as the value
+        assert_equal "CLIENT_ERROR <length> (#{"value".length()}) is not equal to the length of the item's value (#{"set key 9 89 5\r\nvalue".length()})\r\n", reply
+    end
+
+    ###### Key and value that exceed max length
 
     def test_key_too_long
         key = "k" * (MAX_KEY_LENGTH + 1)
@@ -61,7 +91,20 @@ class ErrorStatesTest < BaseTest
         assert_equal END_MSG, reply
     end
 
-    # # ####### Invalid command name
+    def test_noreply_syntax_error_set
+        socket.puts "set #{key} 5 300 5 norep\r\n"
+        socket.puts "value\r\n"
+        assert_equal "CLIENT_ERROR A 'noreply' was expected as the 6th argument, but 'norep' was received\r\n", socket.gets
+    end
+
+    def test_noreply_syntax_error_cas
+        socket.puts "cas #{key} 5 300 5 10 noreplynoreply\r\n"
+        socket.puts "value\r\n"
+        assert_equal "CLIENT_ERROR A 'noreply' was expected as the 7th argument, but 'noreplynoreply' was received\r\n", socket.gets
+    end
+
+
+    ####### Invalid command name
 
     def test_invalid_command_name_1
         socket.puts "invalid_command_name #{key} 4 400 9\r\n"

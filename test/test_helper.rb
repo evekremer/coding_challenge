@@ -17,7 +17,7 @@ class BaseTest < Test::Unit::TestCase
     @socket = TCPSocket.open( "localhost", 9999 )
   end
 
-  def send_storage_cmd(cmd_name, key, flags, exptime, length, unique_cas_key, value, noreply)
+  def send_storage_cmd(cmd_name, key, flags, exptime, length, unique_cas_key, value, noreply = false)
     request = "#{cmd_name} #{key} #{flags} #{exptime} #{length}"
     request += (unique_cas_key ? " #{unique_cas_key}" : "") + (noreply ? " noreply\r\n" : "\r\n")
 

@@ -19,7 +19,7 @@ class SetTest < BaseTest
     request = "set 3 300 5\r\n"
     socket.puts request
     socket.puts "value\r\n"
-    assert_equal "CLIENT_ERROR <length> is not an unsigned integer\r\n", socket.gets
+    assert_equal "CLIENT_ERROR The command has too few arguments\r\n", socket.gets
   end
 
   def test_nil_key_set_2
@@ -39,7 +39,7 @@ class SetTest < BaseTest
 
   def test_no_reply_set
     send_storage_cmd("set", key, 3, 300, value.length(), false, value, true)
-
+    sleep(2)
     # Get the item
     reply = send_get_cmd(key)
     assert_equal expected_get_response(key, 3, value.length(), value), reply
@@ -103,7 +103,7 @@ class SetTest < BaseTest
     assert_equal expected_get_response(key, 5, value.length(), value), reply
   end
 
-  #### Test expiration (exptime)
+  # #### Test expiration (exptime)
 
   # Set item that expires in 3 seconds (with exptime = 3)
   def test_exptime_set
@@ -130,9 +130,9 @@ class SetTest < BaseTest
     assert_equal END_MSG, reply
   end
 
-  ####     Test invalid parameters
+  # ####     Test invalid parameters
 
-  #=> Key
+  # #=> Key
 
   def test_key_with_whitespaces
     key = "key with whitespaces"
@@ -171,7 +171,7 @@ class SetTest < BaseTest
     assert_equal END_MSG, reply
   end
 
-  #=> Flags
+  # #=> Flags
 
   def test_negative_flags_set
     send_storage_cmd("set", key, -4, 300, value.length(), false, value, false)
@@ -206,7 +206,7 @@ class SetTest < BaseTest
     assert_equal END_MSG, reply
   end
 
-  #=> Exptime
+  # #=> Exptime
 
   def test_string_exptime_set
     send_storage_cmd("set", key, 3, "test_exptime", value.length(), false, value, false)
@@ -224,7 +224,7 @@ class SetTest < BaseTest
     assert_equal END_MSG, reply
   end
 
-  #=> Length
+  # #=> Length
 
   def test_negative_length_set
     send_storage_cmd("set", key, 3, 300, -6, false, value, false)
@@ -244,31 +244,29 @@ class SetTest < BaseTest
 
   def test_nil_length_set
     send_storage_cmd("set", key, 3, 300, nil, false, value, false)
-    assert_equal "CLIENT_ERROR <length> is not an unsigned integer\r\n", socket.gets
+    assert_equal "CLIENT_ERROR The command has too few arguments\r\n", socket.gets
 
     reply = send_get_cmd(key)
     assert_equal END_MSG, reply
   end
 
-  ######################################  FIX ! ####################################################
-  # def test_incorrect_length_bigger_set
-  #   # Bigger 'length' than the actual length of the value
-  #   send_storage_cmd("set", key, 2, 3000, value.length()+5, false, value, false)
-  #   assert_equal "CLIENT_ERROR ...", socket.gets
+  def test_incorrect_length_bigger_set
+    # Bigger 'length' than the actual length of the value
+    send_storage_cmd("set", key, 2, 3000, value.length()+5, false, value, false)
+    assert_equal "CLIENT_ERROR <length> (#{value.length()+5}) is not equal to the length of the item's value (#{value.length()})\r\n", socket.gets
 
-  #   reply = send_get_cmd(key)
-  #   assert_equal END_MSG, reply
-  # end
-  ##########################################################################################
+    reply = send_get_cmd(key)
+    assert_equal END_MSG, reply
+  end
 
   def test_incorrect_length_smaller_set
     # Smaller 'length' than the actual length of the value
     # Inserts the item without the last 4 chars
     send_storage_cmd("set", key, 2, 3000, value.length()-4, false, value, false)
-    assert_equal STORED_MSG, socket.gets 
+    assert_equal "CLIENT_ERROR <length> (#{value.length()-4}) is not equal to the length of the item's value (#{value.length()})\r\n", socket.gets 
 
     # Get stored item
     reply = send_get_cmd(key)
-    assert_equal expected_get_response(key, 2, value.length()-4, value[0..value.length()-5]), reply
+    assert_equal END_MSG, reply
   end
 end

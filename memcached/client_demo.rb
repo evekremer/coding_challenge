@@ -232,7 +232,7 @@ module Memcached
                     #=> ERROR
 
                 puts "\n\n>> quit"
-                @socket.puts "quit"
+                @socket.puts "quit\r\n"
                 @socket.close
             rescue IOError => e
                 puts e.message
