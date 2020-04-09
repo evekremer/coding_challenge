@@ -4,10 +4,10 @@ module Memcached
     class ClientDemo
         def initialize(socket)
             @socket = socket
-            establish_communication
+            establish_connection
         end
 
-        def establish_communication
+        def establish_connection
             begin
                 #### Simple set
                 puts "\n#######     Simple set\n\n"
@@ -24,24 +24,6 @@ module Memcached
                 3.times {puts "#{@socket.gets}"}
                     #=> {"key1" => "memcached"}
                 puts "\n"
-
-                #### Set with an expiration timeout
-                puts "\n#######     Set with an expiration timeout\n\n"
-
-                puts ">> set key2 0 2 5\r\n"
-                puts ">> hello\r\n"
-                @socket.puts "set key2 0 2 5\r\n"
-                @socket.puts "hello\r\n"
-                puts "#{@socket.gets}\n"
-                    #=> STORED
-                
-                puts ">> Sleeps for 3 seconds..."
-                sleep(3)
-
-                puts ">> get key2\r\n"
-                @socket.puts "get key2\r\n"
-                puts "#{@socket.gets}\n"
-                    #=> END (key2 was deleted from the memcached server)
 
                 #### Simple add and replace, then get multiple keys
                 puts "\n#######     Simple add and replace, then get multiple keys\n\n"
@@ -145,12 +127,10 @@ module Memcached
 
                 puts ">> gets key6\r\n"
                 @socket.puts "gets key6\r\n"
-                reply = @socket.gets
-                cas_key_ini = get_cas_key(reply)
-                
-                puts "#{reply}"
-                2.times {puts "#{@socket.gets}"}
+                3.times {puts "#{@socket.gets}"}
                 puts "\n"
+                cas_key_ini = 7
+                
 
                 puts ">> set key6 6 80000 13\r\n"
                 puts ">> memcached_2.0\r\n"
@@ -168,12 +148,9 @@ module Memcached
 
                 puts ">> gets key6\r\n"
                 @socket.puts "gets key6\r\n"
-                reply = @socket.gets
-                cas_key_new = get_cas_key(reply)
-                
-                puts "#{reply}"
-                2.times {puts "#{@socket.gets}"}
+                3.times {puts "#{@socket.gets}"}
                 puts "\n"
+                cas_key_new = cas_key_ini + 1
 
                 puts ">> cas key6 0 199000 13 #{cas_key_new}\r\n"
                 puts ">> memcached_2.1\r\n"

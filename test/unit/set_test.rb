@@ -1,9 +1,5 @@
 
 require_relative "../test_helper"
-  ######################################## TO DO 
-  # Set item that never expires (with exptime = 0)?
-  # Set item with UNIX exptime?
-  ################################
 
 class SetTest < BaseTest
   def test_simple_set
@@ -39,7 +35,7 @@ class SetTest < BaseTest
 
   def test_no_reply_set
     send_storage_cmd("set", key, 3, 300, value.length(), false, value, true)
-    sleep(2)
+    sleep(1)
     # Get the item
     reply = send_get_cmd(key)
     assert_equal expected_get_response(key, 3, value.length(), value), reply
@@ -101,33 +97,6 @@ class SetTest < BaseTest
     # Get the item
     reply = send_get_cmd(key, false, value.length())
     assert_equal expected_get_response(key, 5, value.length(), value), reply
-  end
-
-  # #### Test expiration (exptime)
-
-  # Set item that expires in 3 seconds (with exptime = 3)
-  def test_exptime_set
-    send_storage_cmd("set", key, 8, 3, value.length(), false, value, false)
-    assert_equal STORED_MSG, socket.gets
-
-    # Get stored item
-    reply = send_get_cmd(key)
-    assert_equal expected_get_response(key, 8, value.length(), value), reply
-
-    sleep(4)
-
-    # Get expired item
-    reply = send_get_cmd(key)
-    assert_equal END_MSG, reply
-  end
-
-  # Set item that expires immediately (with exptime < 0)
-  def test_set_with_negative_exptime
-    send_storage_cmd("set", key, 8, -3, value.length(), false, value, false)
-    assert_equal STORED_MSG, socket.gets
-    
-    reply = send_get_cmd(key)
-    assert_equal END_MSG, reply
   end
 
   # ####     Test invalid parameters
@@ -261,12 +230,31 @@ class SetTest < BaseTest
 
   def test_incorrect_length_smaller_set
     # Smaller 'length' than the actual length of the value
-    # Inserts the item without the last 4 chars
     send_storage_cmd("set", key, 2, 3000, value.length()-4, false, value, false)
     assert_equal "CLIENT_ERROR <length> (#{value.length()-4}) is not equal to the length of the item's value (#{value.length()})\r\n", socket.gets 
 
-    # Get stored item
     reply = send_get_cmd(key)
+    assert_equal END_MSG, reply
+  end
+
+  def test_lru_set
+    # Reach maximum capacity and check that the first inserted item (key0) is deleted
+    v = "v" * (Memcached::Util::MAX_VALUE_LENGTH - 1)
+    65.times{ |n|
+      send_storage_cmd("set", "key#{n}", 2, 3000, v.length(), false, v, false)
+      assert_equal STORED_MSG, socket.gets
+    }
+    reply = send_get_cmd("key0")
+    assert_equal END_MSG, reply
+
+    # Fetch key1, add a new item and then check that the third inserted item (key2) is deleted
+    reply = send_get_cmd("key1")
+    assert_equal expected_get_response("key1", 2, v.length(), v), reply
+
+    send_storage_cmd("set", "a"+key, 2, 3000, "v".length(), false, "v", false)
+    assert_equal STORED_MSG, socket.gets
+
+    reply = send_get_cmd("key2")
     assert_equal END_MSG, reply
   end
 end

@@ -9,22 +9,22 @@ class ConcurrencyTest < BaseTest
         s = socket
         s.puts "set k1_#{n} 2 1000 #{"v1_#{n}".length()}\r\n"
         s.puts "v1_#{n}\r\n"
-        assert_equal STORED_MSG, s.gets
+        assert_equal Memcached::Util::STORED_MSG, s.gets
 
         s.puts "get k1_#{n}\r\n"
         assert_equal "VALUE k1_#{n} 2 #{"v1_#{n}".length()}\r\n", s.gets
         assert_equal "v1_#{n}\r\n", s.gets
-        assert_equal END_MSG, s.gets
+        assert_equal Memcached::Util::END_MSG, s.gets
 
         # Set and get: (key, value) = (k2<n>, v2<n>)
         s.puts "set k2_#{n} 2 1000 #{"v2_#{n}".length()}\r\n"
         s.puts "v2_#{n}\r\n"
-        assert_equal STORED_MSG, s.gets
+        assert_equal Memcached::Util::STORED_MSG, s.gets
 
         s.puts "get k2_#{n}\r\n"
         assert_equal "VALUE k2_#{n} 2 #{"v2_#{n}".length()}\r\n", s.gets
         assert_equal "v2_#{n}\r\n", s.gets
-        assert_equal END_MSG, s.gets
+        assert_equal Memcached::Util::END_MSG, s.gets
       end
     end.each(&:join)
   end
@@ -38,7 +38,7 @@ class ConcurrencyTest < BaseTest
         20.times { |i|
           s.puts "set test#{n}_#{i} 0 500 #{"v#{n}".length()}\r\n"
           s.puts "v#{n}\r\n"
-          assert_equal STORED_MSG, s.gets
+          assert_equal Memcached::Util::STORED_MSG, s.gets
           keys += " test#{n}_#{i}"
         }
 
@@ -48,7 +48,7 @@ class ConcurrencyTest < BaseTest
           assert_equal "VALUE test#{n}_#{i} 0 #{"v#{n}".length()}\r\n", s.gets
           assert_equal "v#{n}\r\n", s.gets
         }
-        assert_equal END_MSG, s.gets
+        assert_equal Memcached::Util::END_MSG, s.gets
       end
     end.each(&:join)
   end
