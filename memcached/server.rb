@@ -171,17 +171,7 @@ module Memcached
 
         def store_new_item(key, flags, exptime, length, value)
             @aux.validate_parameters([["key", key], ["flags", flags], ["exptime", exptime], ["length", length, value.length()], ["value", value.length()] ])
-
-            case
-            when exptime.to_i == 0 # Never expires 
-                expdate = 0
-            when exptime.to_i < 0 # Immediately expired
-                expdate = Time.now
-            when exptime.to_i <= 30 * Util::SECONDS_PER_DAY
-                expdate = Time.now + exptime.to_i # Offset from current time
-            else
-                expdate = Util::UNIX_TIME + exptime.to_i # Offset from 1/1/1970 (Unix time)
-            end
+            expdate = @aux.expiration_date(exptime.to_i)
             
             added_length = length.to_i
             start_reading

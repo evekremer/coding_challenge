@@ -3,7 +3,7 @@
 ## Contents
 
 - [About Memcached](#about-memcached)
-- [Installation](#installation-and-usage)
+- [Installation and usage](#installation-and-usage)
   - [Server](#server)
   - [Client demo](#client-demo)
   - [Tests](#tests)
@@ -13,7 +13,7 @@
 
 Memcached is a high-performance, distributed memory object caching system, intended for use in speeding up dynamic web applications by alleviating database load, similar to a short-term memory for applications.
 
-The system uses a client–server architecture. The servers maintain a key–value associative array; the clients populate this array and query it by key. Keys are up to 250 bytes long and values can be at most 1 MB in size. When the table is full, subsequent inserts cause older data to be purged in least recently used (LRU) order.
+The system uses a client–server architecture. The servers maintain a key–value associative array; the clients populate this array and query it by key. When the table is full, subsequent inserts cause older data to be purged in least recently used (LRU) order.
 
 Clients of memcached communicate with server through TCP connections. A given running memcached server listens on some (configurable) port; clients connect to that port, send commands to the server, read responses, and eventually close the connection. A subset of 2 types of Memcached commands are supported:
 

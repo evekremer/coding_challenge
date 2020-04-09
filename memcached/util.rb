@@ -12,7 +12,6 @@ module Memcached
         SECONDS_PER_DAY = 60*60*24
         UNIX_TIME = Time.new(1970,1,1)
         
-        # Range constants
         MAX_KEY_LENGTH = 250
         MAX_VALUE_LENGTH = (2 ** 20) # 1MB
         MAX_CAS_KEY = (2 ** 64) - 1 # 64-bit unsigned int
@@ -58,6 +57,20 @@ module Memcached
                 end
             end
             no_reply
+        end
+
+        def expiration_date(exptime)
+            case
+            when exptime == 0 # Never expires 
+                expdate = 0
+            when exptime < 0 # Immediately expired
+                expdate = Time.now
+            when exptime <= 30 * SECONDS_PER_DAY
+                expdate = Time.now + exptime # Offset from current time
+            else
+                expdate = UNIX_TIME + exptime # Offset from 1/1/1970 (Unix time)
+            end
+            expdate
         end
 
         def is_unsigned_i(data, num_bits = nil)
