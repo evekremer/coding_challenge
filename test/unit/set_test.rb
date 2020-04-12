@@ -152,6 +152,14 @@ class SetTest < BaseTest
     assert_equal Memcached::END_MSG, reply
   end
 
+  def test_key_with_control_characters_4
+    key4 = "\nkey\nwith\nmultiple_new_lines\n"
+    send_storage_cmd("set", key4, 9, 4382, value.length(), false, value, false)
+    reply = ""
+    2.times { reply += socket.gets }
+    assert_equal "CLIENT_ERROR Commands must be terminated by '\r\n'\r\n", reply
+  end
+
   # #=> Flags
 
   def test_negative_flags_set
@@ -163,7 +171,7 @@ class SetTest < BaseTest
   end
 
   def test_flags_exceeds_max_set
-    # flags bigger than the max 16-bit integer
+    # flags bigger than the maximum 16-bit integer
     send_storage_cmd("set", key, (2**16)+1, 300, value.length(), false, value, false)
     assert_equal "CLIENT_ERROR <flags> is not a 16-bit unsigned integer\r\n", socket.gets
 
@@ -231,14 +239,14 @@ class SetTest < BaseTest
     assert_equal Memcached::END_MSG, reply
   end
 
-  def test_incorrect_length_bigger_set
-    # Bigger 'length' than the actual length of the value
-    send_storage_cmd("set", key, 2, 3000, value.length()+5, false, value, false)
-    # assert_equal "CLIENT_ERROR <length> (#{value.length()+5}) is not equal to the length of the item's data_block (#{value.length()})\r\n", socket.gets
+  # def test_incorrect_length_bigger_set
+  #   # Bigger 'length' than the actual length of the value
+  #   send_storage_cmd("set", key, 2, 3000, value.length()+5, false, value, false)
+  #   assert_equal "CLIENT_ERROR <length> (#{value.length()+5}) is not equal to the length of the item's data_block (#{value.length()})\r\n", socket.gets
 
-    # reply = send_get_cmd(key)
-    # assert_equal Memcached::END_MSG, reply
-  end
+  #   reply = send_get_cmd(key)
+  #   assert_equal Memcached::END_MSG, reply
+  # end
 
   def test_incorrect_length_smaller_set
     # Smaller 'length' than the actual length of the value

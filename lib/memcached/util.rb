@@ -1,4 +1,5 @@
 module Memcached
+    # Response messages
     STORED_MSG = "STORED\r\n"
     NOT_STORED_MSG = "NOT_STORED\r\n"
     NOT_FOUND_MSG = "NOT_FOUND\r\n"
@@ -20,6 +21,7 @@ module Memcached
     class TypeClientError < StandardError; end
 
     class Util
+        # Determine if 'command' terminates in "\r\n"
         def validate_termination(command)
             command_ending = command[-2..-1] || command
             raise ArgumentClientError, "Commands must be terminated by '\r\n'" unless command_ending == "\r\n"
@@ -29,6 +31,8 @@ module Memcached
         def validate_parameters(parameters)
             parameters.each do |p|
                 case p[0]
+                when "cas"
+                    raise TypeClientError, '<cas_unique> is not a 64-bit unsigned integer' unless is_unsigned_i(p[1], 64)
                 when "key"
                     raise TypeClientError, '<key> must be provided' unless p[1] != ""
                     raise TypeClientError, '<key> must not include control characters' unless !(/\x00|[\cA-\cZ]/ =~ p[1])
@@ -46,7 +50,10 @@ module Memcached
             end
         end
 
+        # Determine if the optional <noreply> parameter is included in command
         def has_no_reply(command_split, max_length)
+            # command_split: parameters received in request line (without command name)
+            # max_length: number of maximum parameters excepted (excluding command name)
             raise ArgumentClientError, "The command has too many arguments" unless command_split.length() <= max_length
             raise ArgumentClientError, "The command has too few arguments" unless command_split.length() >= max_length-1
 
@@ -55,12 +62,13 @@ module Memcached
                 if command_split[max_length-1] == "noreply"
                     no_reply = true
                 else # incorrect syntax
-                    raise ArgumentClientError, "A 'noreply' was expected as the #{max_length+1}th argument, but '#{command_split[max_length-1]}' was received"
+                    raise ArgumentClientError, "<noreply> was expected as the #{max_length+1}th argument, but '#{command_split[max_length-1]}' was received"
                 end
             end
             no_reply
         end
 
+        # Determine the expiration date corresponding to the <exptime> parameter received
         def expiration_date(exptime)
             case
             when exptime == 0 # Never expires 

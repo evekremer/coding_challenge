@@ -27,13 +27,6 @@ class ErrorStatesTest < BaseTest
         assert_equal "CLIENT_ERROR Commands must be terminated by '\r\n'\r\n", reply
     end
 
-    def test_empty_string_cmd
-        socket.puts ""
-        reply = ""
-        2.times { reply += socket.gets }
-        assert_equal "CLIENT_ERROR Commands must be terminated by '\r\n'\r\n", reply
-    end
-
     def test_numeric_command
         socket.puts 111111
         reply = ""
@@ -69,9 +62,9 @@ class ErrorStatesTest < BaseTest
 
         # Takes 'set key 9 89 5' as data_block
         assert_equal "CLIENT_ERROR <length> (#{"value".length()}) is not equal to the length of the item's data_block (#{"set key 9 89 5".length()})\r\n", reply
-        
-        # Takes "value\r\n" as a new request line
-        assert_equal Memcached::INVALID_COMMAND_NAME_MSG, socket.gets
+
+        reply = send_get_cmd(key)
+        assert_equal Memcached::END_MSG, reply
     end
 
     ###### Key and value that exceed max length
@@ -99,15 +92,30 @@ class ErrorStatesTest < BaseTest
     def test_noreply_syntax_error_set
         socket.puts "set #{key} 5 300 5 norep\r\n"
         socket.puts "value\r\n"
-        assert_equal "CLIENT_ERROR A 'noreply' was expected as the 6th argument, but 'norep' was received\r\n", socket.gets
+        assert_equal "CLIENT_ERROR <noreply> was expected as the 6th argument, but 'norep' was received\r\n", socket.gets
+        
+        reply = send_get_cmd(key)
+        assert_equal Memcached::END_MSG, reply
     end
 
-    def test_noreply_syntax_error_cas
+    def test_noreply_syntax_error_cas_1
         socket.puts "cas #{key} 5 300 5 10 noreplynoreply\r\n"
         socket.puts "value\r\n"
-        assert_equal "CLIENT_ERROR A 'noreply' was expected as the 7th argument, but 'noreplynoreply' was received\r\n", socket.gets
+        assert_equal "CLIENT_ERROR <noreply> was expected as the 7th argument, but 'noreplynoreply' was received\r\n", socket.gets
+
+        reply = send_get_cmd(key)
+        assert_equal Memcached::END_MSG, reply
     end
 
+    def test_noreply_syntax_error_cas_2
+        socket.puts "cas #{key} 5 300 5 10 noreply\n\r\n"
+        reply = ""
+        2.times { reply += socket.gets }
+        assert_equal "CLIENT_ERROR Commands must be terminated by '\r\n'\r\n", reply
+
+        reply = send_get_cmd(key)
+        assert_equal Memcached::END_MSG, reply
+    end
 
     ####### Invalid command name
 
@@ -140,6 +148,15 @@ class ErrorStatesTest < BaseTest
         assert_equal Memcached::INVALID_COMMAND_NAME_MSG, socket.gets
 
         reply = send_get_cmd(key)
+        assert_equal Memcached::END_MSG, reply
+    end
+
+    def test_invalid_command_name_5
+        socket.puts "prepend append #{key} 5 5 2\r\n"
+        socket.puts "block\r\n"
+        assert_equal "CLIENT_ERROR <noreply> was expected as the 6th argument, but '2' was received\r\n", socket.gets
+
+        reply = send_get_cmd("append")
         assert_equal Memcached::END_MSG, reply
     end
 

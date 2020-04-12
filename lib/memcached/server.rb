@@ -1,3 +1,4 @@
+require 'io/wait'
 module Memcached
     class Server
         def initialize(socket_address, socket_port)
@@ -38,9 +39,11 @@ module Memcached
                     if ["set", "add", "replace", "prepend", "append", "cas"].include? command_name
                         key, flags, exptime, length = command_split
 
+                        # Read request data block
                         data_block = request_data_block_handler(connection, length)
-        
-                        # Check if the optional 'noreply' parameter is included in 'command'
+
+                        # Determine if the optional <noreply> parameter is included in command
+                        # In cas commands, the number of maximum parameters excepted is 6; 5 otherwise (excluding command name)
                         no_reply = @util.has_no_reply(command_split, command_name == "cas" ? 6 : 5)
                     end
                     
@@ -58,7 +61,7 @@ module Memcached
                         message = retrieve_items(command_split, command_name)
                     when "quit" # Terminate session
                         break
-                    else 
+                    else # The command name received is not supported
                         message = INVALID_COMMAND_NAME_MSG
                     end
 
@@ -68,10 +71,14 @@ module Memcached
                 end
                 connection.close # Disconnect from the client
             rescue ArgumentClientError, TypeClientError => e # the input doesn't conform to the protocol
-                connection.puts "CLIENT_ERROR #{e.message}\r\n"
+                # Clear buffer if there are remaining written bytes
+                if connection.ready?
+                    connection.read_nonblock(MAX_DATA_BLOCK_LENGTH)
+                end
+                connection.puts "CLIENT_ERROR #{e.message}\r\n" # Send error response
                 request_handler(connection)
-            rescue EOFError
-                connection.close # Disconnect from the client
+            rescue EOFError # Client has disconnected
+                connection.close 
             end
         end
 
@@ -84,6 +91,7 @@ module Memcached
             @util.validate_termination(data_block) # Check data_block terminates in "\r\n"
         end
 
+        # [Add / Replace]: store data only if the server [does not / does] already hold data for key
         def add_replace(key, flags, exptime, length, data_block, command_name)
             start_reading
                 cache_has_key = @cache.has_key?(key)
@@ -97,9 +105,9 @@ module Memcached
             end
         end
 
-        # Check and set (cas): set the data if it is not updated since last fetch
+        # Cas: set the data if it is not updated since last fetch
         def cas(key, flags, exptime, length, unique_cas_key, data_block)
-            raise TypeClientError, '<cas_unique> is not a 64-bit unsigned integer' unless @util.is_unsigned_i(unique_cas_key, 64)
+            @util.validate_parameters([["cas", unique_cas_key]])
 
             start_reading
                 cache_has_key = @cache.has_key?(key)
@@ -148,7 +156,7 @@ module Memcached
             message
         end
         
-        # Retrieves the value stored at 'keys'. Keys that do not exists, do not appear on the response
+        # Retrieves the value stored at 'keys'.
         def retrieve_items(keys, command_name)
             raise ArgumentClientError, '<key>* must be provided' unless keys != []
 
@@ -163,6 +171,7 @@ module Memcached
                     end
                 finish_reading
                 
+                # Keys that do not exists, do not appear on the response
                 if cache_has_key
                     # LRU: delete item and re-add to keep the most recently used at the end
                     @mutex_writers.synchronize { # Write shared cache
