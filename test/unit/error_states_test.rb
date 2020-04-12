@@ -18,14 +18,14 @@ class ErrorStatesTest < BaseTest
         assert_equal "CLIENT_ERROR Commands must be terminated by '\r\n'\r\n", reply
     end
 
-    # def test_bad_termination_datablock
-    #     socket.puts "set key 9 89 5\r\n"
-    #     socket.puts "value"
+    def test_bad_termination_datablock
+        socket.puts "set key 9 89 5\r\n"
+        socket.puts "valueAA"
         
-    #     reply = ""
-    #     2.times { reply += socket.gets }
-    #     assert_equal "CLIENT_ERROR Commands must be terminated by '\r\n'\r\n", reply
-    # end
+        reply = ""
+        2.times { reply += socket.gets }
+        assert_equal "CLIENT_ERROR Commands must be terminated by '\r\n'\r\n", reply
+    end
 
     def test_empty_string_cmd
         socket.puts ""
@@ -67,8 +67,11 @@ class ErrorStatesTest < BaseTest
         socket.puts "value\r\n"
         reply = socket.gets
 
-        #Takes 'set key 9 89 5' as the value
+        # Takes 'set key 9 89 5' as data_block
         assert_equal "CLIENT_ERROR <length> (#{"value".length()}) is not equal to the length of the item's data_block (#{"set key 9 89 5".length()})\r\n", reply
+        
+        # Takes "value\r\n" as a new request line
+        assert_equal Memcached::INVALID_COMMAND_NAME_MSG, socket.gets
     end
 
     ###### Key and value that exceed max length

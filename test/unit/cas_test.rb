@@ -49,7 +49,6 @@ class CasTest < BaseTest
         val2 = "new_value"
 
         send_storage_cmd("cas", key, 4, 400, val2.length(), cas_key, val2, true)
-        sleep(1)
 
         # Get the stored item with cas update
         reply = send_get_cmd(key, true)

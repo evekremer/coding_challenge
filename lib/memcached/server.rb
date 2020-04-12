@@ -68,7 +68,6 @@ module Memcached
                 end
                 connection.close # Disconnect from the client
             rescue ArgumentClientError, TypeClientError => e # the input doesn't conform to the protocol
-                connection.flush # Clear buffer
                 connection.puts "CLIENT_ERROR #{e.message}\r\n"
                 request_handler(connection)
             rescue EOFError
@@ -200,8 +199,6 @@ module Memcached
                 update_global_variables(added_length)
             }
         end
-
-        private
 
         def start_reading
             @mutex_readers.synchronize{

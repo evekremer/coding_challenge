@@ -34,8 +34,9 @@ class SetTest < BaseTest
   end
 
   def test_no_reply_set
+    # Send "set" command with <noreply>
     send_storage_cmd("set", key, 3, 300, value.length(), false, value, true)
-    sleep(1)
+
     # Get the item
     reply = send_get_cmd(key)
     assert_equal expected_get_response(key, 3, value.length(), value), reply
@@ -230,14 +231,14 @@ class SetTest < BaseTest
     assert_equal Memcached::END_MSG, reply
   end
 
-  # def test_incorrect_length_bigger_set
-  #   # Bigger 'length' than the actual length of the value
-  #   send_storage_cmd("set", key, 2, 3000, value.length()+5, false, value, false)
-  #   assert_equal "CLIENT_ERROR <length> (#{value.length()+5}) is not equal to the length of the item's data_block (#{value.length()})\r\n", socket.gets
+  def test_incorrect_length_bigger_set
+    # Bigger 'length' than the actual length of the value
+    send_storage_cmd("set", key, 2, 3000, value.length()+5, false, value, false)
+    # assert_equal "CLIENT_ERROR <length> (#{value.length()+5}) is not equal to the length of the item's data_block (#{value.length()})\r\n", socket.gets
 
-  #   reply = send_get_cmd(key)
-  #   assert_equal Memcached::END_MSG, reply
-  # end
+    # reply = send_get_cmd(key)
+    # assert_equal Memcached::END_MSG, reply
+  end
 
   def test_incorrect_length_smaller_set
     # Smaller 'length' than the actual length of the value

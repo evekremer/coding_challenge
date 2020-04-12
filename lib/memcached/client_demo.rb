@@ -216,12 +216,6 @@ module Memcached
                 @socket.close
             end
         end
-
-        def get_cas_key(reply)
-            cas_key = reply.split[4]
-            cas_key = cas_key.delete "\r\n"
-            cas_key
-        end
     end
 
     # Socket address and port set from command line arguments

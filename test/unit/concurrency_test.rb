@@ -30,7 +30,7 @@ class ConcurrencyTest < BaseTest
   end
 
   def test_threads_with_get_multi_keys
-    Array.new(5) do |n|
+    Array.new(10) do |n|
       Thread.new do
         s = socket
         keys = ""

@@ -47,7 +47,7 @@ class AddReplaceTest < BaseTest
 
   def test_no_reply_add
     send_storage_cmd("add", key, 2, 9800, value.length(), false, value, true)
-    sleep(2)
+
     # Get stored item
     reply = send_get_cmd(key)
     assert_equal expected_get_response(key, 2, value.length(), value), reply
@@ -103,7 +103,7 @@ class AddReplaceTest < BaseTest
 
     val2 = "new_value"
     send_storage_cmd("replace", key, 2, 9800, val2.length(), false, val2, true)
-    sleep(2)
+
     # Get stored item
     reply = send_get_cmd(key)
     assert_equal expected_get_response(key, 2, val2.length(), val2), reply

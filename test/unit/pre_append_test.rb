@@ -48,8 +48,8 @@ class PreAppendTest < BaseTest
         assert_equal Memcached::STORED_MSG, socket.gets
     
         value2 = "tail"
+        # Send "append" command with <noreply>
         send_storage_cmd("append", key, 4, 400, value2.length(), false, value2, true)
-        # command with noreply
     
         # Get the item and assert reply
         reply = send_get_cmd(key)
@@ -101,8 +101,8 @@ class PreAppendTest < BaseTest
         assert_equal Memcached::STORED_MSG, socket.gets
     
         value2 = "new_value"
+        # Send "prepend" command with <noreply>
         send_storage_cmd("prepend", key, 4, 400, value2.length(), false, value2, true)
-        sleep(2)
     
         # Get the item and assert reply
         # Note flags are ignored in append/prepend cmds
