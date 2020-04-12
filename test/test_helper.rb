@@ -1,4 +1,4 @@
-require_relative "../memcached/util"
+require_relative "../lib/memcached/util"
 
 require "test/unit"
 require 'socket'
@@ -32,7 +32,7 @@ class BaseTest < Test::Unit::TestCase
     #Get reply
     reply = ""
     reply += @socket.gets
-    if reply != Memcached::Util::END_MSG
+    if reply != Memcached::END_MSG
       reply += length ? @socket.read(length+2) : @socket.gets
       reply += @socket.gets
     end
@@ -44,7 +44,7 @@ class BaseTest < Test::Unit::TestCase
     reply += unique_cas_key ? " #{unique_cas_key}" : ""
     reply += "\r\n#{value}\r\n"
     if !multi
-      reply += Memcached::Util::END_MSG
+      reply += Memcached::END_MSG
     end
     reply
   end

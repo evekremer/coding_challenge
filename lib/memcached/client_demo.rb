@@ -11,7 +11,7 @@ module Memcached
             begin
                 #### Simple set
                 puts "\n#######     Simple set\n\n"
-                
+
                 puts ">> set key1 0 1000000 9\r\n"
                 puts ">> memcached\r\n"
                 @socket.puts "set key1 0 1000000 9\r\n"
@@ -208,8 +208,7 @@ module Memcached
                 puts "#{@socket.gets}\n"
                     #=> ERROR
 
-                puts "\n\n>> quit"
-                @socket.puts "quit\r\n"
+                puts "\n\n>> Close connection"
                 @socket.close
             rescue IOError => e
                 puts e.message

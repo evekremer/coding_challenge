@@ -16,7 +16,7 @@ module Memcached
                 Thread.new do
                     loop do
                         message = $stdin.gets.chomp
-                        @socket.puts message
+                        @socket.puts message + "\r\n"
                     end
                 end
             rescue IOError => e

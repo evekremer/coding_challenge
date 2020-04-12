@@ -13,7 +13,7 @@ class GetGetsTest < BaseTest
       key_ = "key#{i}"
       value_ = "value#{i}"
       send_storage_cmd("set", key_, 2, 8000, value_.length(), false, value_)
-      assert_equal Memcached::Util::STORED_MSG, socket.gets
+      assert_equal Memcached::STORED_MSG, socket.gets
       
       reply = send_get_cmd(key_)
       exp_reply = expected_get_response(key_, 2, value_.length(), value_, false)
@@ -24,7 +24,7 @@ class GetGetsTest < BaseTest
     }
 
     # Get multiple for stored keys
-    exp_reply_multi.concat(Memcached::Util::END_MSG)
+    exp_reply_multi.concat(Memcached::END_MSG)
     reply_multi = send_multi_get_cmd(keys)
     assert_equal exp_reply_multi, reply_multi
   end
@@ -39,7 +39,7 @@ class GetGetsTest < BaseTest
 
   def test_all_missing_multi_get
     socket.puts "get #{key}1 #{key}2 #{key}3 #{key}4\r\n"
-    assert_equal Memcached::Util::END_MSG, socket.gets
+    assert_equal Memcached::END_MSG, socket.gets
   end
 
   def test_all_empty_value_multi_get
@@ -50,14 +50,14 @@ class GetGetsTest < BaseTest
     5.times{ |i|
       key_ = "#{key}#{i}"
       send_storage_cmd("set", key_, 1, 1000, 0, false, nil)
-      assert_equal Memcached::Util::STORED_MSG, socket.gets
+      assert_equal Memcached::STORED_MSG, socket.gets
       
       exp_reply_multi += expected_get_response(key_, 1, 0, nil, false, true)
       keys[i] = key_
     }
 
     # Gets multiple empty values for stored keys
-    exp_reply_multi.concat(Memcached::Util::END_MSG)
+    exp_reply_multi.concat(Memcached::END_MSG)
     reply_multi = send_multi_get_cmd(keys)
     assert_equal exp_reply_multi, reply_multi
   end
@@ -66,12 +66,12 @@ class GetGetsTest < BaseTest
     exp_reply_multi = ""
 
     send_storage_cmd("set", "#{key}1", 3, 300, value.length(), false, value)
-    assert_equal Memcached::Util::STORED_MSG, socket.gets
+    assert_equal Memcached::STORED_MSG, socket.gets
 
     exp_reply_multi += expected_get_response("#{key}1", 3, value.length(), value, false, true)
 
     send_storage_cmd("set", "#{key}3", 4, 500, value.length(), false, value)
-    assert_equal Memcached::Util::STORED_MSG, socket.gets
+    assert_equal Memcached::STORED_MSG, socket.gets
 
     exp_reply_multi += expected_get_response("#{key}3", 4, value.length(), value)
 
@@ -93,7 +93,7 @@ class GetGetsTest < BaseTest
       value_ = "#{i}value"
 
       send_storage_cmd("set", key_, 5, 500, value_.length(), false, value_)
-      assert_equal Memcached::Util::STORED_MSG, socket.gets
+      assert_equal Memcached::STORED_MSG, socket.gets
 
       reply = send_get_cmd(key_, true) # send gets for key_ and read reply
       
@@ -107,7 +107,7 @@ class GetGetsTest < BaseTest
     }
 
     # Gets multiple for stored keys
-    exp_reply_multi.concat(Memcached::Util::END_MSG)
+    exp_reply_multi.concat(Memcached::END_MSG)
     reply_multi = send_multi_get_cmd(keys, true)
 
     assert_equal exp_reply_multi, reply_multi
@@ -123,7 +123,7 @@ class GetGetsTest < BaseTest
 
   def test_all_missing_multi_gets
     socket.puts "gets #{key}1 #{key}2 #{key}3 #{key}4\r\n"
-    assert_equal Memcached::Util::END_MSG, socket.gets
+    assert_equal Memcached::END_MSG, socket.gets
   end
 
   def test_all_empty_value_multi_gets
@@ -134,14 +134,14 @@ class GetGetsTest < BaseTest
     5.times{ |i|
       key_ = "#{key}#{i}"
       send_storage_cmd("set", key_, 1, 1000, 0, false, nil)
-      assert_equal Memcached::Util::STORED_MSG, socket.gets
+      assert_equal Memcached::STORED_MSG, socket.gets
 
       exp_reply_multi += expected_get_response(key_, 1, 0, nil, get_cas_key(key_), true)
       keys[i] = key_
     }
 
     # Gets multiple empty values for stored keys
-    exp_reply_multi.concat(Memcached::Util::END_MSG)
+    exp_reply_multi.concat(Memcached::END_MSG)
     reply_multi = send_multi_get_cmd(keys, true)
     assert_equal exp_reply_multi, reply_multi
   end
@@ -150,12 +150,12 @@ class GetGetsTest < BaseTest
     exp_reply_multi = ""
 
     send_storage_cmd("set", "#{key}1", 3, 300, value.length(), false, value)
-    assert_equal Memcached::Util::STORED_MSG, socket.gets
+    assert_equal Memcached::STORED_MSG, socket.gets
 
     exp_reply_multi += expected_get_response("#{key}1", 3, value.length(), value, get_cas_key("#{key}1"), true)
 
     send_storage_cmd("set", "#{key}3", 4, 500, value.length(), false, value)
-    assert_equal Memcached::Util::STORED_MSG, socket.gets
+    assert_equal Memcached::STORED_MSG, socket.gets
 
     exp_reply_multi += expected_get_response("#{key}3", 4, value.length(), value, get_cas_key("#{key}3"))
 
