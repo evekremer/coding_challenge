@@ -37,6 +37,20 @@ module Memcached
                     #=> {"key2" => "demo"}
                 puts "\n"
 
+                puts "\n#######     Set with empty data_block\n\n"
+                
+                puts ">> set key5 3 1000 0\r\n"
+                puts ">> \r\n"
+                @socket.puts "set key5 3 1000 0\r\n"
+                @socket.puts "\r\n"
+                puts "#{@socket.gets}\n"
+
+                puts ">> get key5\r\n"
+                @socket.puts "get key5\r\n"
+                3.times {puts "#{@socket.gets}"}
+                    #=> { "key5" => ""}
+                puts "\n"
+
                 puts "\n#######     Simple add and replace, then get multiple keys\n\n"
 
                 puts ">> replace key1 4 75000 30\r\n"
@@ -53,35 +67,32 @@ module Memcached
                 puts "#{@socket.gets}\n"
                     #=> STORED
 
-                puts ">> set key4 0 2 55\r\n"
+                puts ">> get key1 key3\r\n"
+                @socket.puts "get key1 key3\r\n"
+                5.times {puts "#{@socket.gets}"}
+                    #=> {"key1" => "this is the new value for key1", 
+                    #    "key3" => "ruby"}
+                puts "\n"
+
+                puts ">> replace key4 0 2 55\r\n"
                 puts ">> Lorem ipsum dolor sit amet, consectetur adipiscing elit\r\n"
-                @socket.puts "set key4 0 2 55\r\n"
+                @socket.puts "replace key4 0 2 55\r\n"
                 @socket.puts "Lorem ipsum dolor sit amet, consectetur adipiscing elit\r\n"
                 puts "#{@socket.gets}\n"
-                    #=> STORED
+                    #=> NOT_STORED
 
-                puts ">> get key1 key2 key3 key4\r\n"
-                @socket.puts "get key1 key2 key3 key4\r\n"
-                9.times {puts "#{@socket.gets}"}
-                    #=> {"key1" => "this is the new value for key1", 
-                    #    "key2" => "demo",
-                    #    "key3" => "ruby", 
-                    #    key4" => "Lorem ipsum dolor sit amet, consectetur adipiscing elit"}
-                puts "\n"
-                
-                puts "\n#######     Set with empty data_block\n\n"
-                
-                puts ">> set key5 3 1000 0\r\n"
-                puts ">> \r\n"
-                @socket.puts "set key5 3 1000 0\r\n"
-                @socket.puts "\r\n"
+                puts ">> add key3 8 12 5\r\n"
+                puts ">> value\r\n"
+                @socket.puts "add key3 8 12 5\r\n"
+                @socket.puts "value\r\n"
                 puts "#{@socket.gets}\n"
+                    #=> NOT_STORED
 
-                puts ">> get key5\r\n"
-                @socket.puts "get key5\r\n"
+                puts ">> get key3 key4\r\n"
+                @socket.puts "get key3 key4\r\n"
                 3.times {puts "#{@socket.gets}"}
-                    #=> { "key5" => nil}
-                puts "\n"
+                    #=> END
+                
 
                 puts "\n#######     Append and prepend to a missing and existing key\n\n"
 
@@ -133,7 +144,7 @@ module Memcached
                 @socket.puts "gets key6\r\n"
                 3.times {puts "#{@socket.gets}"}
                 puts "\n"
-                cas_key_ini = 7
+                cas_key_ini = 6
                 
 
                 puts ">> set key6 6 80000 13\r\n"
@@ -169,7 +180,7 @@ module Memcached
                     #=> {"key6" => "memcached_2.0"}
                 puts "\n"
 
-                puts "\n#######     Invalid commands - error strings\n\n"
+                puts "\n#######     Invalid commands - error responses\n\n"
 
                 puts ">> set key7 0 -1 -2\r\n"
                 puts ">> value\r\n"
@@ -231,13 +242,34 @@ module Memcached
                     #=> CLIENT_ERROR Commands must be terminated by '\r\n'
                 
                 key15 = "k" * (251)
-                puts ">> add #{key15} 8 1000 5\r\n"
-                puts ">> value\r\n"
+                puts "### Add key that exceeds maximum length (250 characters)"
                 @socket.puts "add #{key15} 8 1000 5\r\n"
                 @socket.puts "value\r\n"
                 puts "#{@socket.gets}\n"
                     #=> CLIENT_ERROR <key> has more than 250 characters
-        
+
+                data_block = "d" * (2**20 + 1)
+                puts "### Set data_block that exceeds maximum length (1MB)"
+                @socket.puts "set key16 3 300 #{data_block.length()}\r\n"
+                @socket.puts "#{data_block}\r\n"
+                puts "#{@socket.gets}\n"
+                    #=> CLIENT_ERROR
+
+                key17 = "key\0withnull"
+                puts ">> add key\\0withnull 4 24 14\r\n"
+                puts ">> value_null_key\r\n"
+                @socket.puts "add #{key17} 4 24 14\r\n"
+                @socket.puts "value_null_key\r\n"
+                puts "#{@socket.gets}\n"
+                    #=> CLIENT_ERROR <key> must not include control characters
+
+                puts ">> set key18 42 240 10\r\n"
+                puts ">> value with smaller length\r\n"
+                @socket.puts "set key18 42 240 10\r\n"
+                @socket.puts "value with smaller length\r\n"
+                puts "#{@socket.gets}\n"
+                    #=> CLIENT_ERROR <length> (10) is not equal to the length of the item's data_block (24)
+
                 puts "\n\n>> Close connection"
                 @socket.close
             rescue IOError => e
