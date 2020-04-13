@@ -5,7 +5,7 @@
 - [About Memcached](#about-memcached)
 - [Installation and usage](#installation-and-usage)
   - [Server](#server)
-  - [Client demo](#client-demo)
+  - [Client](#client)
   - [Tests](#tests)
 - [Resources](#resources)
 
@@ -35,11 +35,11 @@ Optional _<socket_address>_ and _<socket_port>_ arguments determine the address 
 
 ### Client
 
-'Client_demo.rb' provides a short demo of a client-server connection, including sample commands sent and received with their corresponding actions, which is invoked by:
+'Client_demo.rb' provides a short demo of a client-server connection, including sample commands sent and received and their corresponding actions, which is invoked by:
 
 - `$ ruby ./lib/memcached/client_demo.rb <socket_address> <socket_port>`
 
-Additionally, 'Client.rb' allows to send requests to server and receive responses through the command line, which is invoked by:
+Additionally, 'Client.rb' allows to send requests to server and receive responses through the command line, invoked by:
 
 - `$ ruby ./lib/memcached/client.rb <socket_address> <socket_port>`
 
@@ -50,7 +50,7 @@ Optional _<socket_address>_ and _<socket_port>_ arguments determine the address 
 In order to run the tests, the server must be running and then invoke:
 `$ ruby ./test/ts_unit_tests.rb`
 
-which runs all the unit tests defined under `/test/unit` folder to run.
+which runs all the unit tests defined under `/test/unit` folder.
 
 ## Resources
 
