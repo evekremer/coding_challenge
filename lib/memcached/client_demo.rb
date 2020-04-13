@@ -9,12 +9,11 @@ module Memcached
 
         def establish_connection
             begin
-                #### Simple set
-                puts "\n#######     Simple set\n\n"
+                puts "\n#######     Simple set and get commands\n\n"
 
-                puts ">> set key1 0 1000000 9\r\n"
+                puts ">> set key1 1 1000000 9\r\n"
                 puts ">> memcached\r\n"
-                @socket.puts "set key1 0 1000000 9\r\n"
+                @socket.puts "set key1 1 1000000 9\r\n"
                 @socket.puts "memcached\r\n"
                 puts "#{@socket.gets}\n"
                 # #=> STORED
@@ -25,7 +24,19 @@ module Memcached
                     #=> {"key1" => "memcached"}
                 puts "\n"
 
-                #### Simple add and replace, then get multiple keys
+                puts ">> set key2 3 3000 4\r\n"
+                puts ">> demo\r\n"
+                @socket.puts "set key2 3 3000 4\r\n"
+                @socket.puts "demo\r\n"
+                puts "#{@socket.gets}\n"
+                # #=> STORED
+
+                puts ">> get key2\r\n"
+                @socket.puts "get key2\r\n"
+                3.times {puts "#{@socket.gets}"}
+                    #=> {"key2" => "demo"}
+                puts "\n"
+
                 puts "\n#######     Simple add and replace, then get multiple keys\n\n"
 
                 puts ">> replace key1 4 75000 30\r\n"
@@ -51,13 +62,13 @@ module Memcached
 
                 puts ">> get key1 key2 key3 key4\r\n"
                 @socket.puts "get key1 key2 key3 key4\r\n"
-                7.times {puts "#{@socket.gets}"}
-                    #=> {"key1" => "new value for key1", 
+                9.times {puts "#{@socket.gets}"}
+                    #=> {"key1" => "this is the new value for key1", 
+                    #    "key2" => "demo",
                     #    "key3" => "ruby", 
                     #    key4" => "Lorem ipsum dolor sit amet, consectetur adipiscing elit"}
                 puts "\n"
                 
-                #### Set with empty data_block
                 puts "\n#######     Set with empty data_block\n\n"
                 
                 puts ">> set key5 3 1000 0\r\n"
@@ -72,13 +83,7 @@ module Memcached
                     #=> { "key5" => nil}
                 puts "\n"
 
-                #### Append and prepend to a missing and existing key
                 puts "\n#######     Append and prepend to a missing and existing key\n\n"
-                
-                puts ">> get key3 key5\r\n"
-                @socket.puts "get key3 key5\r\n"
-                5.times {puts "#{@socket.gets}"}
-                puts "\n"
 
                 puts ">> append missing_key 0 222000 8\r\n"
                 puts ">> abcd1234\r\n"
@@ -95,9 +100,9 @@ module Memcached
                     #=> STORED
 
                 puts ">> prepend key5 330 222000 8\r\n"
-                puts ">> abcd1234\r\n"
+                puts ">> data_block_key5\r\n"
                 @socket.puts "prepend key5 330 222000 8\r\n"
-                @socket.puts "abcd1234\r\n"
+                @socket.puts "data_block_key5\r\n"
                 puts "#{@socket.gets}\n"
                     #=> STORED
 
@@ -105,10 +110,9 @@ module Memcached
                 @socket.puts "get missing_key key3 key5\r\n"
                 5.times {puts "#{@socket.gets}"}
                     #=> { "key3" => "ruby on rails", 
-                    #       key5" => "abcd1234"}
+                    #       key5" => "data_block_key5"}
                 puts "\n"
                 
-                #### CAS command
                 puts "\n#######     CAS command\n\n"
                 
                 puts ">> cas key6 0 199000 9 1\r\n"
@@ -165,49 +169,75 @@ module Memcached
                     #=> {"key6" => "memcached_2.0"}
                 puts "\n"
 
-                #### Invalid commands - error strings
-                puts "\n#### Invalid commands - error strings\n\n"
+                puts "\n#######     Invalid commands - error strings\n\n"
 
                 puts ">> set key7 0 -1 -2\r\n"
                 puts ">> value\r\n"
                 @socket.puts "set key7 0 -1 -2\r\n"
                 @socket.puts "value\r\n"
                 puts "#{@socket.gets}\n"
-                    #=> CLIENT_ERROR
+                    #=> CLIENT_ERROR <length> is not an unsigned integer
 
-                puts ">> set key7 -1 9000 5\r\n"
+                puts ">> set key8 -1 9000 5\r\n"
                 puts ">> value\r\n"
-                @socket.puts "set key7 -1 9000 5\r\n"
+                @socket.puts "set key8 -1 9000 5\r\n"
                 @socket.puts "value\r\n"
                 puts "#{@socket.gets}\n"
-                    #=> CLIENT_ERROR
+                    #=> CLIENT_ERROR <flags> is not a 16-bit unsigned integer
 
-                puts ">> set key7\r\n"
+                puts ">> add key9 3 b c\r\n"
                 puts ">> value\r\n"
-                @socket.puts "set key7\r\n"
+                @socket.puts "add key9 3 b c\r\n"
                 @socket.puts "value\r\n"
                 puts "#{@socket.gets}\n"
-                    #=> CLIENT_ERROR
+                    #=> CLIENT_ERROR <exptime> is not a 16-bit unsigned integer
 
-                puts ">> add key8 a b c\r\n"
+                puts ">> cas key10 3 9000 5 q noreply\r\n"
                 puts ">> value\r\n"
-                @socket.puts "add key8 a b c\r\n"
+                @socket.puts "cas key10 3 9000 5 q noreply\r\n"
                 @socket.puts "value\r\n"
                 puts "#{@socket.gets}\n"
-                    #=> CLIENT_ERROR
+                    #=> CLIENT_ERROR <cas_unique> is not a 64-bit unsigned integer
 
-                puts ">> cas key10 3 9000 5\r\n"
+                puts ">> set key11 3 9000 5 norep\r\n"
                 puts ">> value\r\n"
-                @socket.puts "cas key10 3 9000 5\r\n"
+                @socket.puts "set key11 3 9000 5 norep\r\n"
                 @socket.puts "value\r\n"
                 puts "#{@socket.gets}\n"
-                    #=> CLIENT_ERROR
+                    #=> CLIENT_ERROR <noreply> was expected as the 6th argument, but 'norep' was received
+                
+                puts ">> set key12\r\n"
+                puts ">> value\r\n"
+                @socket.puts "set key12\r\n"
+                @socket.puts "value\r\n"
+                puts "#{@socket.gets}\n"
+                    #=> CLIENT_ERROR The command has too few arguments
 
-                puts ">> invalid_cmd_name key9 3 9000 5\r\n"
-                @socket.puts "invalid_cmd_name key9 3 9000 5\r\n"
+                puts ">> set key13 78 67 5 435 tf\r\n"
+                puts ">> value\r\n"
+                @socket.puts "set key13 78 67 5 435 tf\r\n"
+                @socket.puts "value\r\n"
+                puts "#{@socket.gets}\n"
+                    #=> CLIENT_ERROR The command has too many arguments
+
+                puts ">> invalid_cmd_name key14 3 9000 5\r\n"
+                @socket.puts "invalid_cmd_name key14 3 9000 5\r\n"
                 puts "#{@socket.gets}\n"
                     #=> ERROR
 
+                puts ">> get key"
+                @socket.puts "get key"
+                puts "#{@socket.gets + @socket.gets}\n"
+                    #=> CLIENT_ERROR Commands must be terminated by '\r\n'
+                
+                key15 = "k" * (251)
+                puts ">> add #{key15} 8 1000 5\r\n"
+                puts ">> value\r\n"
+                @socket.puts "add #{key15} 8 1000 5\r\n"
+                @socket.puts "value\r\n"
+                puts "#{@socket.gets}\n"
+                    #=> CLIENT_ERROR <key> has more than 250 characters
+        
                 puts "\n\n>> Close connection"
                 @socket.close
             rescue IOError => e

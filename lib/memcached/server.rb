@@ -77,7 +77,7 @@ module Memcached
                 end
                 connection.puts "CLIENT_ERROR #{e.message}\r\n" # Send error response
                 request_handler(connection)
-            rescue EOFError # Client has disconnected
+            rescue EOFError, IOError # Client has disconnected
                 connection.close 
             end
         end
