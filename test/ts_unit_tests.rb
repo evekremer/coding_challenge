@@ -1,4 +1,5 @@
-# All unit test, except from 'lru_test' which needs to be run from empty cache
+# Run all unit test
+raise "ruby ./test/unit/lru_test.rb failed" unless system("ruby ./test/unit/lru_test.rb")
 require_relative './unit/add_replace_test'
 require_relative './unit/cas_test'
 require_relative './unit/concurrency_test'

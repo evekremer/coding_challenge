@@ -47,10 +47,10 @@ Optional _<socket_address>_ and _<socket_port>_ arguments determine the address 
 
 ### Tests
 
-<!-- In order to run the tests, the server must be running and then invoke from the terminal using:
-`$ rake`
+In order to run the tests, the server must be running and then invoke:
+`$ ruby ./test/ts_unit_tests.rb`
 
-which triggers all the unit tests defined under `/test/unit` folder to run. -->
+which runs all the unit tests defined under `/test/unit` folder to run.
 
 ## Resources
 
