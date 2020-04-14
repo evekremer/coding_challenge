@@ -5,7 +5,7 @@ class PurgeExpiredTest < BaseTest
     def test_exptime_set
         # Set item that expires in 3 seconds (exptime = 3)
         send_storage_cmd("set", key, 8, 3, value.length(), false, value, false)
-        assert_equal Memcached::STORED_MSG, socket.gets
+        assert_equal Memcached::STORED_MSG, read_reply
 
         # Get stored item
         reply = send_get_cmd(key)
@@ -22,18 +22,18 @@ class PurgeExpiredTest < BaseTest
         # Set item that expires immediately (exptime < 0)
         exptime = -3
         send_storage_cmd("set", "#{key}1", 1, exptime, value.length(), false, value, false)
-        assert_equal Memcached::STORED_MSG, socket.gets
+        assert_equal Memcached::STORED_MSG, read_reply
 
         # Set item with unix exptime (exptime >= 30 days)
         # 1 second from 1/1/1970
         exptime = (30 * Memcached::SECONDS_PER_DAY) + 1
         send_storage_cmd("set", "#{key}2", 4, exptime, value.length(), false, value, false)
-        assert_equal Memcached::STORED_MSG, socket.gets
+        assert_equal Memcached::STORED_MSG, read_reply
 
         # 50 seconds prior current time
         exptime = (30 * Memcached::SECONDS_PER_DAY) + Time.now.to_i - 50
         send_storage_cmd("set", "#{key}3", 8, exptime, value.length(), false, value, false)
-        assert_equal Memcached::STORED_MSG, socket.gets
+        assert_equal Memcached::STORED_MSG, read_reply
         
         wait_for_purge_exec
 
@@ -48,7 +48,7 @@ class PurgeExpiredTest < BaseTest
         exptime = (30 * Memcached::SECONDS_PER_DAY) + Time.now.to_i + 120
         
         send_storage_cmd("set", key, 9, exptime, value.length(), false, value, false)
-        assert_equal Memcached::STORED_MSG, socket.gets
+        assert_equal Memcached::STORED_MSG, read_reply
         
         wait_for_purge_exec
 
@@ -72,13 +72,8 @@ class PurgeExpiredTest < BaseTest
         wait_for_purge_exec
 
         # Get multiple expired keys
-        cmd = "get"
-        keys.each do |key|
-            cmd += " #{key}"
-        end
-        cmd += "\r\n"
-        socket.puts cmd
-        assert_equal Memcached::END_MSG, socket.gets
+        send_get_multi_keys(keys)
+        assert_equal Memcached::END_MSG, read_reply
     end
 
     def test_set_multi_some_expired
@@ -102,17 +97,11 @@ class PurgeExpiredTest < BaseTest
         wait_for_purge_exec
 
         # Get multiple expired keys
-        cmd = "get"
-        keys.each do |key|
-            cmd += " #{key}"
-        end
-        cmd += "\r\n"
-        socket.puts cmd
-        
         exp_reply_multi.concat(Memcached::END_MSG)
-        reply_multi = ""
-        (10 * 2).times { reply_multi += @socket.gets }
-        reply_multi += @socket.gets
+
+        send_get_multi_keys(keys)
+        reply_multi = read_reply((10 * 2) + 1)
+        
         assert_equal exp_reply_multi, reply_multi
     end
 end

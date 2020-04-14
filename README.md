@@ -35,7 +35,7 @@ Optional _<socket_address>_ and _<socket_port>_ arguments determine the address 
 
 ### Client
 
-'Client_demo.rb' provides a short demo of a client-server connection, including sample commands sent and received and their corresponding actions, which is invoked by:
+'Client_demo.rb' provides a short demo of a client-server connection, including sample commands, which is invoked by:
 
 - `$ ruby ./lib/memcached/client_demo.rb <socket_address> <socket_port>`
 
@@ -47,7 +47,7 @@ Optional _<socket_address>_ and _<socket_port>_ arguments determine the address 
 
 ### Tests
 
-In order to run the tests, with the server is running invoke:
+In order to run the tests, the server must be running and then invoke:
 
 `$ ruby ./test/ts_unit_tests.rb`
 

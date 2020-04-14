@@ -60,18 +60,28 @@ class BaseTest < Test::Unit::TestCase
     cas_key.to_i
   end
 
-  def send_multi_get_cmd(keys, gets = false)
+  def send_get_multi_keys(keys, gets = false)
     cmd = gets ? "gets" : "get"
     keys.each do |key|
       cmd += " #{key}"
     end
     cmd += "\r\n"
     @socket.puts cmd
+  end
 
+  def send_multi_get_cmd(keys, gets = false)
+    send_get_multi_keys(keys, gets)
     #Get reply
+    # reply = ""
+    # (keys.length() * 2).times { reply += @socket.gets }
+    # reply += @socket.gets
+    # reply
+    read_reply((keys.length() * 2) + 1)
+  end
+  
+  def read_reply(num_lines = 1)
     reply = ""
-    (keys.length() * 2).times { reply += @socket.gets }
-    reply += @socket.gets
+    num_lines.times { reply += @socket.gets }
     reply
   end
 
@@ -84,6 +94,6 @@ class BaseTest < Test::Unit::TestCase
   end
 
   def wait_for_purge_exec
-    sleep(Memcached::PURGE_EXPIRED_KEYS_FREQUENCY_SECS)
+    sleep(Memcached::PURGE_EXPIRED_KEYS_FREQUENCY_SECS+2)
   end
 end

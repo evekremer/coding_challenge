@@ -10,7 +10,9 @@ module Memcached
 
         def establish_connection
             begin
-                puts "\n#######     Simple set and get commands\n\n"
+                puts "-" * 60
+                puts "\n     Simple set and get commands\n\n"
+                puts "-" * 60
 
                 puts ">> set key1 1 1000000 9\r\n"
                 puts ">> memcached\r\n"
@@ -38,21 +40,26 @@ module Memcached
                     #=> {"key2" => "demo"}
                 puts "\n"
 
-                puts "\n#######     Set with empty data_block\n\n"
+                puts "-" * 60
+                puts "\n     Set with empty data_block\n\n"
+                puts "-" * 60
                 
                 puts ">> set key5 3 1000 0\r\n"
                 puts ">> \r\n"
                 @socket.puts "set key5 3 1000 0\r\n"
                 @socket.puts "\r\n"
                 puts "#{@socket.gets}\n"
-
+                    #=> STORED
+                
                 puts ">> get key5\r\n"
                 @socket.puts "get key5\r\n"
                 3.times {puts "#{@socket.gets}"}
                     #=> { "key5" => ""}
                 puts "\n"
-
-                puts "\n#######     Set with an expiration timeout\n\n"
+                
+                puts "-" * 60
+                puts "\n     Set and get expired item\n\n"
+                puts "-" * 60
 
                 puts ">> set key_exptime 0 2 5\r\n"
                 puts ">> value\r\n"
@@ -61,15 +68,17 @@ module Memcached
                 puts "#{@socket.gets}\n"
                     #=> STORED
                 
-                puts ">> Sleeps for #{PURGE_EXPIRED_KEYS_FREQUENCY_SECS+5} seconds..."
+                puts ">> Sleeps for #{PURGE_EXPIRED_KEYS_FREQUENCY_SECS+5} seconds...\n"
                 sleep(PURGE_EXPIRED_KEYS_FREQUENCY_SECS+5)
 
                 puts ">> get key_exptime\r\n"
                 @socket.puts "get key_exptime\r\n"
                 puts "#{@socket.gets}\n"
-                    #=> END (key_exptime was deleted from the cache)
+                    #=> END (key_exptime item was deleted from the cache)
 
-                puts "\n#######     Simple add and replace, then get multiple keys\n\n"
+                puts "-" * 60
+                puts "\n     Simple add and replace, then get multiple keys\n\n"
+                puts "-" * 60
 
                 puts ">> replace key1 4 75000 30\r\n"
                 puts ">> this is the new value for key1\r\n"
@@ -109,10 +118,11 @@ module Memcached
                 puts ">> get key3 key4\r\n"
                 @socket.puts "get key3 key4\r\n"
                 3.times {puts "#{@socket.gets}"}
-                    #=> END
+                    #=> {"key3" => "ruby"}
                 
-
-                puts "\n#######     Append and prepend to a missing and existing key\n\n"
+                puts "-" * 60
+                puts "\n     Append and prepend to missing and existing keys\n\n"
+                puts "-" * 60
 
                 puts ">> append missing_key 0 222000 8\r\n"
                 puts ">> abcd1234\r\n"
@@ -142,7 +152,9 @@ module Memcached
                     #       key5" => "data_block_key5"}
                 puts "\n"
                 
-                puts "\n#######     CAS command\n\n"
+                puts "-" * 60
+                puts "\n     CAS command\n\n"
+                puts "-" * 60
                 
                 puts ">> cas key6 0 199000 9 1\r\n"
                 puts ">> memcached\r\n"
@@ -161,8 +173,9 @@ module Memcached
                 puts ">> gets key6\r\n"
                 @socket.puts "gets key6\r\n"
                 3.times {puts "#{@socket.gets}"}
+                    #=> { "key6" => "memcached", caskey: 8}
                 puts "\n"
-                cas_key_ini = 6
+                cas_key_ini = 8
                 
 
                 puts ">> set key6 6 80000 13\r\n"
@@ -170,7 +183,7 @@ module Memcached
                 @socket.puts "set key6 6 80000 13\r\n"
                 @socket.puts "memcached_2.0\r\n"
                 puts "#{@socket.gets}\n"
-                    #=> STORED and unique_cas_key is updated
+                    #=> STORED and unique_cas_key is updated (with value 9)
 
                 puts ">> cas key6 0 199000 13 #{cas_key_ini}\r\n"
                 puts ">> memcached_2.1\r\n"
@@ -182,6 +195,7 @@ module Memcached
                 puts ">> gets key6\r\n"
                 @socket.puts "gets key6\r\n"
                 3.times {puts "#{@socket.gets}"}
+                #=> { "key6" => "memcached_2.0", caskey: 9}
                 puts "\n"
                 cas_key_new = cas_key_ini + 1
 
@@ -195,11 +209,14 @@ module Memcached
                 puts ">> gets key6\r\n"
                 @socket.puts "gets key6\r\n"
                 3.times {puts "#{@socket.gets}"}
-                    #=> {"key6" => "memcached_2.0"}
+                    #=> {"key6" => "memcached_2.1", caskey: 10}
                 puts "\n"
 
-                puts "\n#######     Invalid commands - error responses\n\n"
+                puts "-" * 60
+                puts "\n     Invalid commands - error responses\n\n"
+                puts "-" * 60
 
+                puts "####     length = -1\n\n"
                 puts ">> set key7 0 -1 -2\r\n"
                 puts ">> value\r\n"
                 @socket.puts "set key7 0 -1 -2\r\n"
@@ -207,6 +224,7 @@ module Memcached
                 puts "#{@socket.gets}\n"
                     #=> CLIENT_ERROR <length> is not an unsigned integer
 
+                puts "####     flags = -1\n\n"
                 puts ">> set key8 -1 9000 5\r\n"
                 puts ">> value\r\n"
                 @socket.puts "set key8 -1 9000 5\r\n"
@@ -214,6 +232,7 @@ module Memcached
                 puts "#{@socket.gets}\n"
                     #=> CLIENT_ERROR <flags> is not a 16-bit unsigned integer
 
+                puts "####     exptime = b\n\n"
                 puts ">> add key9 3 b c\r\n"
                 puts ">> value\r\n"
                 @socket.puts "add key9 3 b c\r\n"
@@ -221,6 +240,7 @@ module Memcached
                 puts "#{@socket.gets}\n"
                     #=> CLIENT_ERROR <exptime> is not a 16-bit unsigned integer
 
+                puts "####     cas_unique = q\n\n"
                 puts ">> cas key10 3 9000 5 q noreply\r\n"
                 puts ">> value\r\n"
                 @socket.puts "cas key10 3 9000 5 q noreply\r\n"
@@ -260,14 +280,14 @@ module Memcached
                     #=> CLIENT_ERROR Commands must be terminated by '\\r\n'
                 
                 key15 = "k" * (251)
-                puts "### Add key that exceeds maximum length (250 characters)"
+                puts ">> add key that exceeds maximum length (250 characters)\n"
                 @socket.puts "add #{key15} 8 1000 5\r\n"
                 @socket.puts "value\r\n"
                 puts "#{@socket.gets}\n"
                     #=> CLIENT_ERROR <key> has more than 250 characters
 
                 data_block = "d" * (2**20 + 1)
-                puts "### Set data_block that exceeds maximum length (1MB)"
+                puts ">> set data_block that exceeds maximum length (1MB)\n"
                 @socket.puts "set key16 3 300 #{data_block.length()}\r\n"
                 @socket.puts "#{data_block}\r\n"
                 puts "#{@socket.gets}\n"
@@ -287,12 +307,11 @@ module Memcached
                 @socket.puts "value with smaller length\r\n"
                 puts "#{@socket.gets}\n"
                     #=> CLIENT_ERROR <length> (10) is not equal to the length of the item's data_block (24)
-                
+                puts "-" * 60
                 puts "\n\n>> Close connection"
                 @socket.close
             rescue IOError => e
                 puts e.message
-                # e.backtrace
                 @socket.close
             end
         end
