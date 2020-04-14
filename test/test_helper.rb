@@ -82,4 +82,8 @@ class BaseTest < Test::Unit::TestCase
   def value
     "value_" + caller.first[/.*[` ](.*)'/, 1]
   end
+
+  def wait_for_purge_exec
+    sleep(Memcached::PURGE_EXPIRED_KEYS_FREQUENCY_SECS)
+  end
 end

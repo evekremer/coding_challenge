@@ -8,14 +8,14 @@ class ErrorStatesTest < BaseTest
         socket.puts "get #{key}"
         reply = ""
         2.times { reply += socket.gets }
-        assert_equal "CLIENT_ERROR Commands must be terminated by '\r\n'\r\n", reply
+        assert_equal "CLIENT_ERROR Commands must be terminated by '\\r\n'\r\n", reply
     end
 
     def test_bad_termination_set
         socket.puts "set #{key} 5 5000 6"
         reply = ""
         2.times { reply += socket.gets }
-        assert_equal "CLIENT_ERROR Commands must be terminated by '\r\n'\r\n", reply
+        assert_equal "CLIENT_ERROR Commands must be terminated by '\\r\n'\r\n", reply
     end
 
     def test_bad_termination_datablock
@@ -24,21 +24,21 @@ class ErrorStatesTest < BaseTest
         
         reply = ""
         2.times { reply += socket.gets }
-        assert_equal "CLIENT_ERROR Commands must be terminated by '\r\n'\r\n", reply
+        assert_equal "CLIENT_ERROR Commands must be terminated by '\\r\n'\r\n", reply
     end
 
     def test_numeric_command
         socket.puts 111111
         reply = ""
         2.times { reply += socket.gets }
-        assert_equal "CLIENT_ERROR Commands must be terminated by '\r\n'\r\n", reply
+        assert_equal "CLIENT_ERROR Commands must be terminated by '\\r\n'\r\n", reply
     end
 
     def test_nil_command
         socket.puts nil
         reply = ""
         2.times { reply += socket.gets }
-        assert_equal "CLIENT_ERROR Commands must be terminated by '\r\n'\r\n", reply
+        assert_equal "CLIENT_ERROR Commands must be terminated by '\\r\n'\r\n", reply
     end
 
     def test_empty_command_1
@@ -52,7 +52,7 @@ class ErrorStatesTest < BaseTest
         socket.puts "value\r\n"
         reply = ""
         2.times { reply += socket.gets }
-        assert_equal "CLIENT_ERROR Commands must be terminated by '\r\n'\r\n", reply
+        assert_equal "CLIENT_ERROR Commands must be terminated by '\\r\n'\r\n", reply
     end
     
     def test_duplicate_command
@@ -92,7 +92,7 @@ class ErrorStatesTest < BaseTest
     def test_noreply_syntax_error_set
         socket.puts "set #{key} 5 300 5 norep\r\n"
         socket.puts "value\r\n"
-        assert_equal "CLIENT_ERROR <noreply> was expected as the 6th argument, but 'norep' was received\r\n", socket.gets
+        assert_equal "CLIENT_ERROR \"noreply\" was expected as the 6th argument, but \"norep\" was received\r\n", socket.gets
         
         reply = send_get_cmd(key)
         assert_equal Memcached::END_MSG, reply
@@ -101,7 +101,7 @@ class ErrorStatesTest < BaseTest
     def test_noreply_syntax_error_cas_1
         socket.puts "cas #{key} 5 300 5 10 noreplynoreply\r\n"
         socket.puts "value\r\n"
-        assert_equal "CLIENT_ERROR <noreply> was expected as the 7th argument, but 'noreplynoreply' was received\r\n", socket.gets
+        assert_equal "CLIENT_ERROR \"noreply\" was expected as the 7th argument, but \"noreplynoreply\" was received\r\n", socket.gets
 
         reply = send_get_cmd(key)
         assert_equal Memcached::END_MSG, reply
@@ -111,7 +111,7 @@ class ErrorStatesTest < BaseTest
         socket.puts "cas #{key} 5 300 5 10 noreply\n\r\n"
         reply = ""
         2.times { reply += socket.gets }
-        assert_equal "CLIENT_ERROR Commands must be terminated by '\r\n'\r\n", reply
+        assert_equal "CLIENT_ERROR Commands must be terminated by '\\r\n'\r\n", reply
 
         reply = send_get_cmd(key)
         assert_equal Memcached::END_MSG, reply
@@ -154,7 +154,7 @@ class ErrorStatesTest < BaseTest
     def test_invalid_command_name_5
         socket.puts "prepend append #{key} 5 5 2\r\n"
         socket.puts "block\r\n"
-        assert_equal "CLIENT_ERROR <noreply> was expected as the 6th argument, but '2' was received\r\n", socket.gets
+        assert_equal "CLIENT_ERROR \"noreply\" was expected as the 6th argument, but \"2\" was received\r\n", socket.gets
 
         reply = send_get_cmd("append")
         assert_equal Memcached::END_MSG, reply

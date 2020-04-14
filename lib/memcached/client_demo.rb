@@ -1,3 +1,4 @@
+require_relative './util'
 require 'socket'
 
 module Memcached
@@ -50,6 +51,23 @@ module Memcached
                 3.times {puts "#{@socket.gets}"}
                     #=> { "key5" => ""}
                 puts "\n"
+
+                puts "\n#######     Set with an expiration timeout\n\n"
+
+                puts ">> set key_exptime 0 2 5\r\n"
+                puts ">> value\r\n"
+                @socket.puts "set key_exptime 0 2 5\r\n"
+                @socket.puts "value\r\n"
+                puts "#{@socket.gets}\n"
+                    #=> STORED
+                
+                puts ">> Sleeps for #{PURGE_EXPIRED_KEYS_FREQUENCY_SECS+5} seconds..."
+                sleep(PURGE_EXPIRED_KEYS_FREQUENCY_SECS+5)
+
+                puts ">> get key_exptime\r\n"
+                @socket.puts "get key_exptime\r\n"
+                puts "#{@socket.gets}\n"
+                    #=> END (key_exptime was deleted from the cache)
 
                 puts "\n#######     Simple add and replace, then get multiple keys\n\n"
 
@@ -110,9 +128,9 @@ module Memcached
                 puts "#{@socket.gets}\n"
                     #=> STORED
 
-                puts ">> prepend key5 330 222000 8\r\n"
+                puts ">> prepend key5 330 222000 #{"data_block_key5".length()}\r\n"
                 puts ">> data_block_key5\r\n"
-                @socket.puts "prepend key5 330 222000 8\r\n"
+                @socket.puts "prepend key5 330 222000 #{"data_block_key5".length()}\r\n"
                 @socket.puts "data_block_key5\r\n"
                 puts "#{@socket.gets}\n"
                     #=> STORED
@@ -215,7 +233,7 @@ module Memcached
                 @socket.puts "set key11 3 9000 5 norep\r\n"
                 @socket.puts "value\r\n"
                 puts "#{@socket.gets}\n"
-                    #=> CLIENT_ERROR <noreply> was expected as the 6th argument, but 'norep' was received
+                    #=> CLIENT_ERROR "noreply" was expected as the 6th argument, but "norep" was received
                 
                 puts ">> set key12\r\n"
                 puts ">> value\r\n"
@@ -239,7 +257,7 @@ module Memcached
                 puts ">> get key"
                 @socket.puts "get key"
                 puts "#{@socket.gets + @socket.gets}\n"
-                    #=> CLIENT_ERROR Commands must be terminated by '\r\n'
+                    #=> CLIENT_ERROR Commands must be terminated by '\\r\n'
                 
                 key15 = "k" * (251)
                 puts "### Add key that exceeds maximum length (250 characters)"
@@ -269,7 +287,7 @@ module Memcached
                 @socket.puts "value with smaller length\r\n"
                 puts "#{@socket.gets}\n"
                     #=> CLIENT_ERROR <length> (10) is not equal to the length of the item's data_block (24)
-
+                
                 puts "\n\n>> Close connection"
                 @socket.close
             rescue IOError => e

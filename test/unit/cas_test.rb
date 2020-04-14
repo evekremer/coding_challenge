@@ -89,4 +89,26 @@ class CasTest < BaseTest
         reply = send_get_cmd(key, true)
         assert_equal Memcached::END_MSG, reply
     end
+
+    def test_exptime_cas
+        # Set item that never expires (exptime = 0)
+        send_storage_cmd("set", key, 2, 0, value.length(), false, value, false)
+        assert_equal Memcached::STORED_MSG, socket.gets
+    
+        # Cas with exptime = 3 seconds
+        cas_key = get_cas_key(key)
+        val2 = "new_value"
+        send_storage_cmd("cas", key, 8, 3, val2.length(), cas_key, val2, false)
+        assert_equal Memcached::STORED_MSG, socket.gets
+    
+        # Get stored item
+        reply = send_get_cmd(key)
+        assert_equal expected_get_response(key, 8, val2.length(), val2), reply
+    
+        wait_for_purge_exec
+        
+        # Get expired item
+        reply = send_get_cmd(key)
+        assert_equal Memcached::END_MSG, reply
+    end
 end

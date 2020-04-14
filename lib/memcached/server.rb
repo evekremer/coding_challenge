@@ -11,19 +11,26 @@ module Memcached
             @total_length_stored = 0
             @util = Memcached::Util.new
             puts 'The server has been started'
-            establish_connections
+
+            @request_object = establish_connections
+            @purge_expired_object = purge_expired_keys
+
+            @request_object.join
+            @purge_expired_object.join
         end
 
         def establish_connections
-            loop{
-                client_connection = @server_socket.accept
-                Thread.start(client_connection) do |conn|
-                    puts "Connection established => #{conn}"
-                    request_handler(conn)
-                    puts "Connection closed => #{conn}"
-                end
-            }.join
-            @server_socket.close
+            Thread.new do
+                loop{
+                    client_connection = @server_socket.accept
+                    Thread.start(client_connection) do |conn|
+                        puts "Connection established => #{conn}"
+                        request_handler(conn)
+                        puts "Connection closed => #{conn}"
+                    end
+                }.join
+                @server_socket.close
+            end
         end
 
         def request_handler(connection)
@@ -42,7 +49,7 @@ module Memcached
                         # Read request data block
                         data_block = request_data_block_handler(connection, length)
 
-                        # Determine if the optional <noreply> parameter is included in command
+                        # Determine if the optional "noreply" parameter is included in command
                         # In cas commands, the number of maximum parameters excepted is 6; 5 otherwise (excluding command name)
                         no_reply = @util.has_no_reply(command_split, command_name == "cas" ? 6 : 5)
                     end
@@ -237,6 +244,31 @@ module Memcached
         def remove_least_recently_used
             deleted_item = @cache.shift # removes the first item of cache (LRU)
             @total_length_stored -= deleted_item[1][2].to_i
+        end
+
+        def purge_expired_keys
+            Thread.new do
+                loop{
+                    sleep(PURGE_EXPIRED_KEYS_FREQUENCY_SECS)
+                    keys = Array.new
+                    i = 0
+                    start_reading
+                    @cache.each do |key, value|
+                        expdate = value[1]
+                        if expdate.to_i != 0 && Time.now >= expdate    
+                            keys[i] = key
+                            i += 1
+                        end
+                    end
+                    finish_reading
+                    
+                    @mutex_writers.synchronize { # Write shared cache
+                        keys.each do |key|
+                            @cache.delete(key)
+                        end
+                    }
+                }
+            end
         end
     end
 end

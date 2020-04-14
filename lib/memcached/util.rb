@@ -17,6 +17,8 @@ module Memcached
     MAX_CAS_KEY = (2 ** 64) - 1 # 64-bit unsigned int
     MAX_CACHE_CAPACITY = 64 * ONE_MEGABYTE # 64MB
 
+    PURGE_EXPIRED_KEYS_FREQUENCY_SECS = 10
+
     class ArgumentClientError < StandardError; end
     class TypeClientError < StandardError; end
 
@@ -24,7 +26,7 @@ module Memcached
         # Determine if 'command' terminates in "\r\n"
         def validate_termination(command)
             command_ending = command[-2..-1] || command
-            raise ArgumentClientError, "Commands must be terminated by '\r\n'" unless command_ending == "\r\n"
+            raise ArgumentClientError, "Commands must be terminated by '\\r\n'" unless command_ending == "\r\n"
             command[0..-3] || command
         end
 
@@ -50,7 +52,7 @@ module Memcached
             end
         end
 
-        # Determine if the optional <noreply> parameter is included in command
+        # Determine if the optional "noreply" parameter is included in command
         def has_no_reply(command_split, max_length)
             # command_split: parameters received in request line (without command name)
             # max_length: number of maximum parameters excepted (excluding command name)
@@ -62,7 +64,7 @@ module Memcached
                 if command_split[max_length-1] == "noreply"
                     no_reply = true
                 else # incorrect syntax
-                    raise ArgumentClientError, "<noreply> was expected as the #{max_length+1}th argument, but '#{command_split[max_length-1]}' was received"
+                    raise ArgumentClientError, "\"noreply\" was expected as the #{max_length+1}th argument, but \"#{command_split[max_length-1]}\" was received"
                 end
             end
             no_reply

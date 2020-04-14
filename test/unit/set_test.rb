@@ -157,7 +157,7 @@ class SetTest < BaseTest
     send_storage_cmd("set", key4, 9, 4382, value.length(), false, value, false)
     reply = ""
     2.times { reply += socket.gets }
-    assert_equal "CLIENT_ERROR Commands must be terminated by '\r\n'\r\n", reply
+    assert_equal "CLIENT_ERROR Commands must be terminated by '\\r\n'\r\n", reply
   end
 
   # #=> Flags

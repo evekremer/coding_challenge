@@ -23,15 +23,15 @@ Clients of memcached communicate with server through TCP connections. A given ru
 
 ## Installation and Usage
 
-Requires _Ruby v2.0.0p648_ to be installed.
+Requires _Ruby v2.7.1p83_ to be installed (current stable release) although older versions may work.
 
 ### Server
 
-The server is started by invoking the following from the command line:
+The server is started by running:
 
 `$ ruby ./lib/memcached.rb <socket_address> <socket_port>`
 
-Optional _<socket_address>_ and _<socket_port>_ arguments determine the address where the server will be accepting client connections. `localhost:9999` is assigned by default.
+Optional _<socket_address>_ and _<socket_port>_ arguments determine the address where the server will be accepting client connections. `0.0.0.0:9999` is assigned by default.
 
 ### Client
 
@@ -47,7 +47,8 @@ Optional _<socket_address>_ and _<socket_port>_ arguments determine the address 
 
 ### Tests
 
-In order to run the tests, the server must be running and then invoke:
+In order to run the tests, with the server is running invoke:
+
 `$ ruby ./test/ts_unit_tests.rb`
 
 which runs all the unit tests defined under `/test/unit` folder.
