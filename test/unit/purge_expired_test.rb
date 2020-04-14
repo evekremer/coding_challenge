@@ -82,18 +82,21 @@ class PurgeExpiredTest < BaseTest
     end
 
     def test_set_multi_some_expired
+        exp_reply_multi = ""
         keys = Array.new
-        exptime = 0
 
         20.times{ |i|
-            key_ = "key_exp#{i}"
-            value_ = "value_exp#{i}"
+            key_ = "#{key}#{i}"
+            value_ = "#{value}#{i}"
             if i < 10
-                send_storage_cmd("set", key_, 4, exptime+1, value_.length(), false, value_, true)
+                # Immediatelly expires (exptime = -1)
+                send_storage_cmd("set", key_, 4, -1, value_.length(), false, value_, true)
             else
+                # Expires in 1000 seconds
                 send_storage_cmd("set", key_, 4, 1000, value_.length(), false, value_, true)
+                exp_reply_multi += expected_get_response(key_, 4, value_.length(), value_, false, true)
+            end
             keys[i] = key_
-
         }
 
         wait_for_purge_exec
@@ -105,6 +108,11 @@ class PurgeExpiredTest < BaseTest
         end
         cmd += "\r\n"
         socket.puts cmd
-        assert_equal Memcached::END_MSG, socket.gets
+        
+        exp_reply_multi.concat(Memcached::END_MSG)
+        reply_multi = ""
+        (10 * 2).times { reply_multi += @socket.gets }
+        reply_multi += @socket.gets
+        assert_equal exp_reply_multi, reply_multi
     end
 end
