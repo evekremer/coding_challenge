@@ -1,92 +1,114 @@
 module Memcached
+    
     # Response messages
-    STORED_MSG = "STORED\r\n"
-    NOT_STORED_MSG = "NOT_STORED\r\n"
-    NOT_FOUND_MSG = "NOT_FOUND\r\n"
-    EXISTS_MSG = "EXISTS\r\n"
-    INVALID_COMMAND_NAME_MSG = "ERROR\r\n"
-    END_MSG = "END\r\n"
+    STORED_MSG = "STORED" + CMD_ENDING
+    NOT_STORED_MSG = "NOT_STORED" + CMD_ENDING
+    NOT_FOUND_MSG = "NOT_FOUND" + CMD_ENDING
+    EXISTS_MSG = "EXISTS" + CMD_ENDING
+    INVALID_COMMAND_NAME_MSG = "ERROR" + CMD_ENDING
+    END_MSG = "END" + CMD_ENDING
 
     # Expiration date
     SECONDS_PER_DAY = 60*60*24
     UNIX_TIME = Time.new(1970,1,1)
     
     ONE_MEGABYTE = (2 ** 20)
-    MAX_KEY_LENGTH = 250
-    MAX_DATA_BLOCK_LENGTH = ONE_MEGABYTE # 1MB
+    KEY_MAX_LENGTH = 250
+    DATA_BLOCK_MAX_LENGTH = ONE_MEGABYTE # 1MB
     MAX_CAS_KEY = (2 ** 64) - 1 # 64-bit unsigned int
     MAX_CACHE_CAPACITY = 64 * ONE_MEGABYTE # 64MB
 
     PURGE_EXPIRED_KEYS_FREQUENCY_SECS = 10
 
+    # Command names
+    SET_CMD_NAME = "set"
+    ADD_CMD_NAME = "add"
+    REPLACE_CMD_NAME = "replace"
+    PREPEND_CMD_NAME = "prepend"
+    APPEND_CMD_NAME = "append"
+    CAS_CMD_NAME = "cas"
+    GET_CMD_NAME = "get"
+    GETS_CMD_NAME = "gets"
+    CMD_ENDING = "\r\n"
+    NO_REPLY_PARAMETER = "noreply"
+
+    # Response error messages
+    CLIENT_ERROR = "CLIENT_ERROR "
+    VALUE_LABEL = "VALUE "
+    TOO_MANY_ARGUMENTS_MSG = "The command has too many arguments"
+    TOO_FEW_ARGUMENTS_MSG = "The command has too few arguments"
+
+    EXPTIME_TYPE_MSG = '<exptime> is not an integer'
+    FLAGS_TYPE_MSG = '<flags> is not a 16-bit unsigned integer'
+    LENGTH_TYPE_MSG = '<length> is not an unsigned integer'
+    CAS_KEY_TYPE_MSG = '<cas_unique> is not a 64-bit unsigned integer'
+
+    CMD_TERMINATION_MSG = "Commands must be terminated by '\\r\n'"
+
+    KEY_NOT_PROVIDED_MSG = '<key> must be provided'
+    KEYS_NOT_PROVIDED_MSG = '<key>* must be provided'
+    KEY_WITH_CONTROL_CHARS_PROVIDED_MSG = '<key> must not include control characters'
+
+    KEY_TOO_BIG_MSG = "<key> has more than #{MAX_KEY_LENGTH} characters"
+    DATA_BLOCK_TOO_BIG_MSG = "<data_block> has more than #{MAX_DATA_BLOCK_LENGTH} characters"
+
     class ArgumentClientError < StandardError; end
     class TypeClientError < StandardError; end
 
-    class Util
-        # Determine if 'command' terminates in "\r\n"
-        def validate_termination(command)
+    module Util
+        # Check that 'command' terminates in "\r\n"
+        def validate_command_termination!(command)
             command_ending = command[-2..-1] || command
-            raise ArgumentClientError, "Commands must be terminated by '\\r\n'" unless command_ending == "\r\n"
+            raise ArgumentClientError, CMD_TERMINATION_MSG unless command_ending == CMD_ENDING
             command[0..-3] || command
         end
 
-        def validate_parameters(parameters)
-            parameters.each do |p|
-                case p[0]
-                when "cas"
-                    raise TypeClientError, '<cas_unique> is not a 64-bit unsigned integer' unless is_unsigned_i(p[1], 64)
-                when "key"
-                    raise TypeClientError, '<key> must be provided' unless p[1] != ""
-                    raise TypeClientError, '<key> must not include control characters' unless !(/\x00|[\cA-\cZ]/ =~ p[1])
-                    raise TypeClientError, "<key> has more than #{MAX_KEY_LENGTH} characters" unless p[1].length() <= MAX_KEY_LENGTH
-                when "length"
-                    raise TypeClientError, '<length> is not an unsigned integer' unless is_unsigned_i(p[1])
-                    raise ArgumentClientError, "<length> (#{p[1]}) is not equal to the length of the item's data_block (#{p[2]})" unless p[2] == p[1].to_i
-                when "flags"
-                    raise TypeClientError, '<flags> is not a 16-bit unsigned integer' unless is_unsigned_i(p[1], 16)
-                when "exptime"
-                    raise TypeClientError, '<exptime> is not an integer' unless /\A[-+]?\d+\z/ === p[1]
-                when "data_block"
-                    raise TypeClientError, "<data_block> has more than #{MAX_DATA_BLOCK_LENGTH} characters" unless p[1] <= MAX_DATA_BLOCK_LENGTH
-                end
-            end
+        def validate_key!(key)
+            raise TypeClientError, KEY_NOT_PROVIDED unless key != ""
+            raise TypeClientError, KEY_WITH_CONTROL_CHARS_PROVIDED_MSG if key.has_control_characters?
+            raise TypeClientError, KEY_RANGE_ERROR_MSG unless key.length() <= KEY_MAX_LENGTH
         end
 
-        # Determine if the optional "noreply" parameter is included in command
-        def has_no_reply(command_split, max_length)
-            # command_split: parameters received in request line (without command name)
-            # max_length: number of maximum parameters excepted (excluding command name)
-            raise ArgumentClientError, "The command has too many arguments" unless command_split.length() <= max_length
-            raise ArgumentClientError, "The command has too few arguments" unless command_split.length() >= max_length-1
-
-            no_reply = false
-            if command_split.length() == max_length
-                if command_split[max_length-1] == "noreply"
-                    no_reply = true
-                else # incorrect syntax
-                    raise ArgumentClientError, "\"noreply\" was expected as the #{max_length+1}th argument, but \"#{command_split[max_length-1]}\" was received"
-                end
-            end
-            no_reply
+        def validate_cas!(cas_key)
+            raise TypeClientError, CAS_KEY_TYPE_ERROR unless cas_key.is_unsigned_i?(64)
         end
 
-        # Determine the expiration date corresponding to the <exptime> parameter received
-        def expiration_date(exptime)
-            case
-            when exptime == 0 # Never expires 
-                expdate = 0
-            when exptime < 0 # Immediately expired
-                expdate = Time.now
-            when exptime <= 30 * SECONDS_PER_DAY
-                expdate = Time.now + exptime # Offset from current time
-            else
-                expdate = UNIX_TIME + exptime # Offset from 1/1/1970 (Unix time)
-            end
-            expdate
+        def validate_data_block_max_length!(data_block)
+            raise TypeClientError, DATA_BLOCK_TOO_BIG_MSG unless data_block.length() <= DATA_BLOCK_MAX_LENGTH
         end
 
-        def is_unsigned_i(data, num_bits = nil)
-            /\A\d+\z/ === data && (num_bits ? data.to_i < 2**num_bits && data.to_i >= 0 : true )
+        def validate_exptime!(exptime)
+            raise TypeClientError, EXPTIME_TYPE_ERROR unless exptime.is_i?
+        end
+
+        def validate_length!(length)
+            raise TypeClientError, LENGTH_TYPE_ERROR unless length.is_unsigned_i?
+        end
+
+        def validate_flags!(flags)
+            raise TypeClientError, FLAGS_TYPE_ERROR unless flags.is_unsigned_i?(16)
+        end
+
+        # Check that the 'length' parameter corresponds to the length of the data_block
+        def validate_length_data!(length, data_block)
+            raise ArgumentClientError, "<length> (#{length}) is not equal to the length of the item's data_block (#{data_block.length()})" unless data_block.length() == length.to_i
+        end
+
+        def validate_parameters_min_length!(parameters, min_length)
+            raise ArgumentClientError, TOO_FEW_ARGUMENTS unless parameters.length() >= min_length
+        end
+
+        def is_unsigned_i?(num_bits = nil)
+            /\A\d+\z/ === self 
+            && (num_bits ? self.to_i < 2**num_bits && self.to_i >= 0 : true )
+        end
+
+        def is_i?
+            /\A[-+]?\d+\z/ === self
+        end
+
+        def has_control_characters?
+            /\x00|[\cA-\cZ]/ =~ self
         end
     end
 end
