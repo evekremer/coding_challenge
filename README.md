@@ -37,11 +37,11 @@ Optional _<socket_address>_ and _<socket_port>_ arguments determine the address 
 
 'Client_demo.rb' provides a short demo of a client-server connection, including sample commands, which is invoked by:
 
-- `$ ruby ./lib/memcached/client_demo.rb <socket_address> <socket_port>`
+- `$ ruby ./lib/memcached/client/client_demo.rb <socket_address> <socket_port>`
 
 Additionally, 'Client.rb' allows to send requests to server and receive responses through the command line, invoked by:
 
-- `$ ruby ./lib/memcached/client.rb <socket_address> <socket_port>`
+- `$ ruby ./lib/memcached/client/client.rb <socket_address> <socket_port>`
 
 Optional _<socket_address>_ and _<socket_port>_ arguments determine the address for the TCP socket of the client. `localhost:9999` is assigned by default.
 
