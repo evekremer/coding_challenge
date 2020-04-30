@@ -6,13 +6,13 @@ class ErrorStatesTest < BaseTest
   def test_bad_termination_get
     socket.puts "get #{key}"
     reply = read_reply(2)
-    assert_equal "CLIENT_ERROR Commands must be terminated by '\\r\n'\r\n", reply
+    assert_equal Memcached::CMD_TERMINATION_MSG, reply
   end
 
   def test_bad_termination_set
     socket.puts "set #{key} 5 5000 6"
     reply = read_reply(2)
-    assert_equal "CLIENT_ERROR Commands must be terminated by '\\r\n'\r\n", reply
+    assert_equal Memcached::CMD_TERMINATION_MSG, reply
   end
 
   def test_bad_termination_datablock
@@ -20,19 +20,19 @@ class ErrorStatesTest < BaseTest
     socket.puts "valueAA"
     
     reply = read_reply(2)
-    assert_equal "CLIENT_ERROR Commands must be terminated by '\\r\n'\r\n", reply
+    assert_equal Memcached::CMD_TERMINATION_MSG, reply
   end
 
   def test_numeric_command
     socket.puts 111111
     reply = read_reply(2)
-    assert_equal "CLIENT_ERROR Commands must be terminated by '\\r\n'\r\n", reply
+    assert_equal Memcached::CMD_TERMINATION_MSG, reply
   end
 
   def test_nil_command
     socket.puts nil
     reply = read_reply(2)
-    assert_equal "CLIENT_ERROR Commands must be terminated by '\\r\n'\r\n", reply
+    assert_equal Memcached::CMD_TERMINATION_MSG, reply
   end
 
   def test_empty_command_1
@@ -45,7 +45,7 @@ class ErrorStatesTest < BaseTest
     socket.puts ""
     socket.puts "value\r\n"
     reply = read_reply(2)
-    assert_equal "CLIENT_ERROR Commands must be terminated by '\\r\n'\r\n", reply
+    assert_equal Memcached::CMD_TERMINATION_MSG, reply
   end
   
   def test_duplicate_command
@@ -66,17 +66,17 @@ class ErrorStatesTest < BaseTest
     key = "k" * (Memcached::MAX_KEY_LENGTH + 1)
 
     send_storage_cmd("set", key, 4, 6230, value.length(), false, value, false)
-    assert_equal "CLIENT_ERROR <key> has more than #{Memcached::MAX_KEY_LENGTH} characters\r\n", read_reply
+    assert_equal Memcached::KEY_TOO_LONG_MSG, read_reply
 
     socket.puts "get #{key}\r\n"
-    assert_equal "CLIENT_ERROR <key> has more than #{Memcached::MAX_KEY_LENGTH} characters\r\n", read_reply
+    assert_equal Memcached::KEY_TOO_LONG_MSG, read_reply
   end
 
   def test_value_too_long
     value = "v" * (Memcached::MAX_DATA_BLOCK_LENGTH + 1)
 
     send_storage_cmd("set", key, 4, 6230, value.length(), false, value, false)
-    assert_equal "CLIENT_ERROR <data_block> has more than #{Memcached::MAX_DATA_BLOCK_LENGTH} characters\r\n", read_reply
+    assert_equal Memcached::DATA_BLOCK_TOO_LONG_MSG, read_reply
     
     reply = send_get_cmd(key)
     assert_equal Memcached::END_MSG, reply
@@ -85,7 +85,7 @@ class ErrorStatesTest < BaseTest
   def test_noreply_syntax_error_set
     socket.puts "set #{key} 5 300 5 norep\r\n"
     socket.puts "value\r\n"
-    assert_equal "CLIENT_ERROR \"noreply\" was expected as the 6th argument, but \"norep\" was received\r\n", read_reply
+    assert_equal "CLIENT_ERROR \"#{Memcached::NOREPLY}\" was expected as the 6th argument, but \"norep\" was received\r\n", read_reply
     
     reply = send_get_cmd(key)
     assert_equal Memcached::END_MSG, reply
@@ -94,7 +94,7 @@ class ErrorStatesTest < BaseTest
   def test_noreply_syntax_error_cas_1
     socket.puts "cas #{key} 5 300 5 10 noreplynoreply\r\n"
     socket.puts "value\r\n"
-    assert_equal "CLIENT_ERROR \"noreply\" was expected as the 7th argument, but \"noreplynoreply\" was received\r\n", read_reply
+    assert_equal "CLIENT_ERROR \"#{Memcached::NOREPLY}\" was expected as the 7th argument, but \"noreplynoreply\" was received\r\n", read_reply
 
     reply = send_get_cmd(key)
     assert_equal Memcached::END_MSG, reply
@@ -103,7 +103,7 @@ class ErrorStatesTest < BaseTest
   def test_noreply_syntax_error_cas_2
     socket.puts "cas #{key} 5 300 5 10 noreply\n\r\n"
     reply = read_reply(2)
-    assert_equal "CLIENT_ERROR Commands must be terminated by '\\r\n'\r\n", reply
+    assert_equal Memcached::CMD_TERMINATION_MSG, reply
 
     reply = send_get_cmd(key)
     assert_equal Memcached::END_MSG, reply
@@ -146,7 +146,7 @@ class ErrorStatesTest < BaseTest
   def test_invalid_command_name_5
     socket.puts "prepend append #{key} 5 5 2\r\n"
     socket.puts "block\r\n"
-    assert_equal "CLIENT_ERROR \"noreply\" was expected as the 6th argument, but \"2\" was received\r\n", read_reply
+    assert_equal "CLIENT_ERROR \"#{Memcached::NOREPLY}\" was expected as the 6th argument, but \"2\" was received\r\n", read_reply
 
     reply = send_get_cmd("append")
     assert_equal Memcached::END_MSG, reply
@@ -169,6 +169,22 @@ class ErrorStatesTest < BaseTest
     reply = send_get_cmd(key)
     assert_equal Memcached::END_MSG, reply
   end
+
+  def test_case_sensitive_set_2
+    socket.puts "Set #{key} 5 5000 2\r\n"
+    assert_equal Memcached::INVALID_COMMAND_NAME_MSG, read_reply
+
+    reply = send_get_cmd(key)
+    assert_equal Memcached::END_MSG, reply
+  end
+
+  def test_case_sensitive_set_3
+    socket.puts "seT #{key} 5 5000 2\r\n"
+    assert_equal Memcached::INVALID_COMMAND_NAME_MSG, read_reply
+
+    reply = send_get_cmd(key)
+    assert_equal Memcached::END_MSG, reply
+  end
   
   def test_case_sensitive_add
     socket.puts "ADD #{key} 5 5000 2\r\n"
@@ -177,25 +193,9 @@ class ErrorStatesTest < BaseTest
     reply = send_get_cmd(key)
     assert_equal Memcached::END_MSG, reply
   end
-  
-  def test_case_sensitive_replace
-    socket.puts "REPLACE #{key} 5 5000 2\r\n"
-    assert_equal Memcached::INVALID_COMMAND_NAME_MSG, read_reply
-
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
-  end
 
   def test_case_sensitive_prepend
     socket.puts "PREPEND #{key} 5 5000 2\r\n"
-    assert_equal Memcached::INVALID_COMMAND_NAME_MSG, read_reply
-
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
-  end
-
-  def test_case_sensitive_append
-    socket.puts "APPEND #{key} 5 5000 2\r\n"
     assert_equal Memcached::INVALID_COMMAND_NAME_MSG, read_reply
 
     reply = send_get_cmd(key)
@@ -212,11 +212,6 @@ class ErrorStatesTest < BaseTest
 
   def test_case_sensitive_get
     socket.puts "GET #{key}\r\n"
-    assert_equal Memcached::INVALID_COMMAND_NAME_MSG, read_reply
-  end
-
-  def test_case_sensitive_gets
-    socket.puts "GETS #{key}\r\n"
     assert_equal Memcached::INVALID_COMMAND_NAME_MSG, read_reply
   end
 end

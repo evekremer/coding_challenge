@@ -2,6 +2,7 @@
 require_relative "../test_helper"
 
 class CasTest < BaseTest
+
   def test_simple_cas
     send_storage_cmd("set", key, 3, 300, value.length(), false, value, false)
     assert_equal Memcached::STORED_MSG, read_reply
@@ -58,7 +59,7 @@ class CasTest < BaseTest
 
   def test_negative_cas_unique_key
     send_storage_cmd("cas", key, 3, 300, value.length(), -2, value, false)
-    assert_equal "CLIENT_ERROR <cas_unique> is not a 64-bit unsigned integer\r\n", read_reply
+    assert_equal Memcached::CAS_KEY_TYPE_MSG, read_reply
 
     reply = send_get_cmd(key, true)
     assert_equal Memcached::END_MSG, reply
@@ -67,7 +68,7 @@ class CasTest < BaseTest
   # cas_unique_key bigger than the maximum 64-bit integer
   def test_exceeds_max_cas_unique_key
     send_storage_cmd("cas", key, 3, 300, value.length(), Memcached::MAX_CAS_KEY+1, value, false)
-    assert_equal "CLIENT_ERROR <cas_unique> is not a 64-bit unsigned integer\r\n", read_reply
+    assert_equal Memcached::CAS_KEY_TYPE_MSG, read_reply
 
     reply = send_get_cmd(key, true)
     assert_equal Memcached::END_MSG, reply
@@ -75,7 +76,7 @@ class CasTest < BaseTest
 
   def test_string_cas_unique_key
     send_storage_cmd("cas", key, 3, 300, value.length(), "unique_cas_key", value, false)
-    assert_equal "CLIENT_ERROR <cas_unique> is not a 64-bit unsigned integer\r\n", read_reply
+    assert_equal Memcached::CAS_KEY_TYPE_MSG, read_reply
 
     reply = send_get_cmd(key, true)
     assert_equal Memcached::END_MSG, reply
@@ -83,7 +84,7 @@ class CasTest < BaseTest
 
   def test_empty_string_cas_unique_key
     send_storage_cmd("cas", key, 3, 300, value.length(), nil, value, false)
-    assert_equal "CLIENT_ERROR The command has too few arguments\r\n", read_reply
+    assert_equal Memcached::TOO_FEW_ARGUMENTS_MSG, read_reply
 
     reply = send_get_cmd(key, true)
     assert_equal Memcached::END_MSG, reply

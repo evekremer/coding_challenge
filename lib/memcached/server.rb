@@ -63,7 +63,7 @@ module Memcached
           if connection.ready?
             connection.read_nonblock(MAX_DATA_BLOCK_LENGTH)
           end
-          message = CLIENT_ERROR + e.message + CMD_ENDING
+          message = e.message
           # request_handler(connection)
         end
 

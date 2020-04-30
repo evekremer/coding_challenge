@@ -68,7 +68,7 @@ module Memcached
     def has_no_reply?(parameters)
       no_reply = false
       if parameters.length() == @parameters_max_length
-        raise ArgumentClientError, "\"#{NO_REPLY}\" was expected as the #{@parameters_max_length+1}th argument, but \"#{parameters[@parameters_max_length-1]}\" was received" unless parameters[@parameters_max_length-1] == NO_REPLY
+        raise ArgumentClientError, "\"#{NO_REPLY}\" was expected as the #{@parameters_max_length+1}th argument, but \"#{parameters[@parameters_max_length-1]}\" was received" + CMD_ENDING unless parameters[@parameters_max_length-1] == NO_REPLY
         no_reply = true
       end
       no_reply

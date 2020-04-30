@@ -9,53 +9,76 @@ class Memcached::LRUCache
     @max_capacity = max_capacity
   end
 
+  def cache_has_key?(key)
+    @cache.has_key?(key)
+  end
+
   def get(key)
     @cache[key]
     update_most_recently_used(key)
   end
 
-  def cache_has_key?(key)
-    @cache.has_key?(key)
+  def flags(key)
+    @cache[key][0]
+  end
+
+  def expdate(key)
+    @cache[key][1]
+  end
+
+  def length=(key, length)
+    @cache[key][2] = length
   end
 
   def length(key)
     if cache_has_key(key)
-      @cache[key].length
+      @cache[key][2].to_i
     else
       0
     end
   end
 
-  def data_block(key)
-    @cache[key].data_block
+  def cas_key=(key, cas_key)
+    @cache[key][3] = cas_key
   end
 
   def cas_key(key)
-    @cache[key].cas_key
+    @cache[key][3]
   end
 
-  def cas_key
-    @cas_key
+  def data_block=(key, data_block)
+    @cache[key][4] = data_block
   end
 
-  def store(key, new_item)
+  def data_block(key)
+    @cache[key][4]
+  end
+
+  def store(key, flags, expdate, length, cas_key, data_block)
     # Determine the length added by the new insertion to the total stored
-    previous_item_length = length(key)
-    added_length = new_item.length.to_i - previous_item_length
+    stored_item_length = length(key)
+    added_length = length.to_i - stored_item_length
 
     # Remove LRU item if maximum capacity is reached
     remove_least_recently_used if @total_length_stored + added_length > @max_capacity
 
     # Store new item and update state of cache
-    @cache[key] = new_item
+    @cache[key] = flags, expdate, length, cas_key, data_block
+    
     @total_length_stored += added_length
     update_most_recently_used(key)
+    STORED_MSG
+  end
+
+  def update(key, length, cas_key, data_block)
+    store(key, flags(key), expdate(key), length, cas_key, data_block)
   end
   
   def purge_expired_keys
 ####################### SYNCHRO
-    @cache.each do |key, value|
-      if value.is_expired?
+    @cache.each do |key|
+      expdate = expdate(key)
+      if expdate.is_expired?
         remove_item_from_cache(key)
       end
     end
@@ -70,8 +93,8 @@ class Memcached::LRUCache
   end
 
   def remove_item_from_cache(key)
-    deleted_item = @cache.delete(key)
-    @total_length_stored -= deleted_item[1].length.to_i
+    @total_length_stored -= length(key)
+    @cache.delete(key)
   end
 
   def remove_least_recently_used

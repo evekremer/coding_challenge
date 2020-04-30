@@ -15,12 +15,12 @@ class SetTest < BaseTest
     request = "set 3 300 5\r\n"
     socket.puts request
     socket.puts "value\r\n"
-    assert_equal "CLIENT_ERROR The command has too few arguments\r\n", read_reply
+    assert_equal Memcached::TOO_FEW_ARGUMENTS_MSG, read_reply
   end
 
   def test_nil_key_set_2
     send_storage_cmd("set", nil, 4, 800, value.length(), false, value, false)
-    assert_equal "CLIENT_ERROR <key> must be provided\r\n", read_reply
+    assert_equal Memcached::KEY_NOT_PROVIDED_MSG, read_reply
   end
 
   def test_empty_value_set
@@ -119,7 +119,7 @@ class SetTest < BaseTest
     key = "key with whitespaces"
 
     send_storage_cmd("set", key, 9, 43782, value.length(), false, value, false)
-    assert_equal "CLIENT_ERROR The command has too many arguments\r\n", read_reply
+    assert_equal Memcached::TOO_MANY_ARGUMENTS_MSG, read_reply
 
     reply = send_get_cmd(key)
     assert_equal Memcached::END_MSG, reply
@@ -128,7 +128,7 @@ class SetTest < BaseTest
   def test_key_with_control_characters_1
     key1 = "key\0withnull"
     send_storage_cmd("set", key1, 9, 4382, value.length(), false, value, false)
-    assert_equal "CLIENT_ERROR <key> must not include control characters\r\n", read_reply
+    assert_equal Memcached::KEY_WITH_CONTROL_CHARS_MSG, read_reply
 
     reply = send_get_cmd(key)
     assert_equal Memcached::END_MSG, reply
@@ -137,7 +137,7 @@ class SetTest < BaseTest
   def test_key_with_control_characters_2
     key2 = "key\twith\ttabs"
     send_storage_cmd("set", key2, 9, 4382, value.length(), false, value, false)
-    assert_equal "CLIENT_ERROR <key> must not include control characters\r\n", read_reply
+    assert_equal Memcached::KEY_WITH_CONTROL_CHARS_MSG, read_reply
 
     reply = send_get_cmd(key)
     assert_equal Memcached::END_MSG, reply
@@ -146,7 +146,7 @@ class SetTest < BaseTest
   def test_key_with_control_characters_3
     key3 = "\a\akey\bwith\vmultiple_control\f_chars"
     send_storage_cmd("set", key3, 9, 4382, value.length(), false, value, false)
-    assert_equal "CLIENT_ERROR <key> must not include control characters\r\n", read_reply
+    assert_equal Memcached::KEY_WITH_CONTROL_CHARS_MSG, read_reply
 
     reply = send_get_cmd(key)
     assert_equal Memcached::END_MSG, reply
@@ -156,14 +156,14 @@ class SetTest < BaseTest
     key4 = "\nkey\nwith\nmultiple_new_lines\n"
     send_storage_cmd("set", key4, 9, 4382, value.length(), false, value, false)
     reply = read_reply(2)
-    assert_equal "CLIENT_ERROR Commands must be terminated by '\\r\n'\r\n", reply
+    assert_equal Memcached::CMD_TERMINATION_MSG, reply
   end
 
   # #=> Flags
 
   def test_negative_flags_set
     send_storage_cmd("set", key, -4, 300, value.length(), false, value, false)
-    assert_equal "CLIENT_ERROR <flags> is not a 16-bit unsigned integer\r\n", read_reply
+    assert_equal Memcached::FLAGS_TYPE_MSG, read_reply
 
     reply = send_get_cmd(key)
     assert_equal Memcached::END_MSG, reply
@@ -172,7 +172,7 @@ class SetTest < BaseTest
   def test_flags_exceeds_max_set
     # flags bigger than the maximum 16-bit integer
     send_storage_cmd("set", key, (2**16)+1, 300, value.length(), false, value, false)
-    assert_equal "CLIENT_ERROR <flags> is not a 16-bit unsigned integer\r\n", read_reply
+    assert_equal Memcached::FLAGS_TYPE_MSG, read_reply
 
     reply = send_get_cmd(key)
     assert_equal Memcached::END_MSG, reply
@@ -180,7 +180,7 @@ class SetTest < BaseTest
 
   def test_string_flags_set
     send_storage_cmd("set", key, "abc", 300, value.length(), false, value, false)
-    assert_equal "CLIENT_ERROR <flags> is not a 16-bit unsigned integer\r\n", read_reply
+    assert_equal Memcached::FLAGS_TYPE_MSG, read_reply
 
     reply = send_get_cmd(key)
     assert_equal Memcached::END_MSG, reply
@@ -188,7 +188,7 @@ class SetTest < BaseTest
 
   def test_nil_flags_set
     send_storage_cmd("set", key, nil, 300, value.length(), false, value, false)
-    assert_equal "CLIENT_ERROR <flags> is not a 16-bit unsigned integer\r\n", read_reply
+    assert_equal Memcached::FLAGS_TYPE_MSG, read_reply
 
     reply = send_get_cmd(key)
     assert_equal Memcached::END_MSG, reply
@@ -198,7 +198,7 @@ class SetTest < BaseTest
 
   def test_string_exptime_set
     send_storage_cmd("set", key, 3, "test_exptime", value.length(), false, value, false)
-    assert_equal "CLIENT_ERROR <exptime> is not an integer\r\n", read_reply
+    assert_equal Memcached::EXPTIME_TYPE_MSG, read_reply
 
     reply = send_get_cmd(key)
     assert_equal Memcached::END_MSG, reply
@@ -206,7 +206,7 @@ class SetTest < BaseTest
 
   def test_nil_exptime_set
     send_storage_cmd("set", key, 3, nil, value.length(), false, value, false)
-    assert_equal "CLIENT_ERROR <exptime> is not an integer\r\n", read_reply
+    assert_equal Memcached::EXPTIME_TYPE_MSG, read_reply
 
     reply = send_get_cmd(key)
     assert_equal Memcached::END_MSG, reply
@@ -216,7 +216,7 @@ class SetTest < BaseTest
 
   def test_negative_length_set
     send_storage_cmd("set", key, 3, 300, -6, false, value, false)
-    assert_equal "CLIENT_ERROR <length> is not an unsigned integer\r\n", read_reply
+    assert_equal Memcached::LENGTH_TYPE_MSG, read_reply
 
     reply = send_get_cmd(key)
     assert_equal Memcached::END_MSG, reply
@@ -224,7 +224,7 @@ class SetTest < BaseTest
 
   def test_string_length_set
     send_storage_cmd("set", key, 3, 300, "test_length", false, value, false)
-    assert_equal "CLIENT_ERROR <length> is not an unsigned integer\r\n", read_reply
+    assert_equal Memcached::LENGTH_TYPE_MSG, read_reply
 
     reply = send_get_cmd(key)
     assert_equal Memcached::END_MSG, reply
@@ -232,7 +232,7 @@ class SetTest < BaseTest
 
   def test_nil_length_set
     send_storage_cmd("set", key, 3, 300, nil, false, value, false)
-    assert_equal "CLIENT_ERROR The command has too few arguments\r\n", read_reply
+    assert_equal Memcached::TOO_FEW_ARGUMENTS_MSG, read_reply
 
     reply = send_get_cmd(key)
     assert_equal Memcached::END_MSG, reply

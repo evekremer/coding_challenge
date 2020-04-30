@@ -31,10 +31,10 @@ class GetGetsTest < BaseTest
   
   def test_get_empty_key
     socket.puts "get       \r\n"
-    assert_equal "CLIENT_ERROR <key>* must be provided\r\n", read_reply
+    assert_equal Memcached::KEYS_NOT_PROVIDED_MSG, read_reply
 
     socket.puts "get\r\n"
-    assert_equal "CLIENT_ERROR <key>* must be provided\r\n", read_reply
+    assert_equal Memcached::KEYS_NOT_PROVIDED_MSG, read_reply
   end
 
   def test_all_missing_multi_get
@@ -114,10 +114,10 @@ class GetGetsTest < BaseTest
 
   def test_gets_empty_key
     socket.puts "gets       \r\n"
-    assert_equal "CLIENT_ERROR <key>* must be provided\r\n", read_reply
+    assert_equal Memcached::KEYS_NOT_PROVIDED_MSG, read_reply
 
     socket.puts "gets\r\n"
-    assert_equal "CLIENT_ERROR <key>* must be provided\r\n", read_reply
+    assert_equal Memcached::KEYS_NOT_PROVIDED_MSG, read_reply
   end
 
   def test_all_missing_multi_gets

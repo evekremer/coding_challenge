@@ -138,10 +138,10 @@ class PreAppendTest < BaseTest
     v2 = "b" * (Memcached::MAX_DATA_BLOCK_LENGTH - value.length() + 1) # more than 1MB long
     
     send_storage_cmd("prepend", key, 2, 3000, v2.length(), false, v2, false)
-    assert_equal "CLIENT_ERROR <data_block> has more than #{Memcached::MAX_DATA_BLOCK_LENGTH} characters\r\n", read_reply
+    assert_equal Memcached::DATA_BLOCK_TOO_LONG_MSG, read_reply
 
     send_storage_cmd("append", key, 2, 3000, v2.length(), false, v2, false)
-    assert_equal "CLIENT_ERROR <data_block> has more than #{Memcached::MAX_DATA_BLOCK_LENGTH} characters\r\n", read_reply
+    assert_equal Memcached::DATA_BLOCK_TOO_LONG_MSG, read_reply
     
     # Get the item and assert reply without changes
     reply = send_get_cmd(key)
