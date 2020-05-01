@@ -1,8 +1,10 @@
 require_relative './memcached/util'
-require_relative './memcached/commands/*'
+require_relative './memcached/commands/storage'
+require_relative './memcached/commands/cas'
+require_relative './memcached/commands/retrieval'
 require_relative './memcached/cache_handler'
-require_relative './memcached/item'
 require_relative './memcached/lru_cache'
+require 'socket'
 require_relative './memcached/server'
 
 socket_address = ARGV[0] || "0.0.0.0" # any client anywhere can connect

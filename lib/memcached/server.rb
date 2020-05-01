@@ -1,5 +1,4 @@
 require 'io/wait'
-require 'socket'
 
 module Memcached
   class Server
@@ -9,15 +8,19 @@ module Memcached
       @server_socket = TCPServer.open(socket_address, socket_port)
       puts 'The server has been started'
 
+      
       @cache_handler = CacheHandler.new
 
-      establish_connections
+      @request_object = establish_connections
+      @purge_expired_object = purge_expired_keys
+      @request_object.join
+      @purge_expired_object.join
     end
 
     private
 
     def establish_connections
-      Thread.new do
+      Thread.new{
         loop{
           client_connection = @server_socket.accept
           Thread.start(client_connection) do |conn|
@@ -25,9 +28,9 @@ module Memcached
             request_handler(conn)
             puts "Connection closed => #{conn}"
           end
-        }.join
+        }
         @server_socket.close
-      end
+      }
     end
 
     def request_handler(connection)
@@ -43,17 +46,17 @@ module Memcached
             data_block = read_data_block_request(command_split[3], connection)
             
             if command_name == CAS_CMD_NAME
-              storage_obj = CasCommand.new(parameters, data_block)
+              storage_obj = CasCommand.new(command_split, data_block)
             else
-              storage_obj = StorageCommand.new(parameters, data_block)
+              storage_obj = StorageCommand.new(command_name, command_split, data_block)
             end
 
             no_reply = storage_obj.no_reply
             message = @cache_handler.storage_handler(storage_obj)
     
           elsif [GET_CMD_NAME, GETS_CMD_NAME].include? command_name
-            retrieval_obj = RetrievalCommand.new(command_name, parameters)
-            message = @cache_handler.retrieval_handler(retrieval_obj) 
+            retrieval_obj = RetrievalCommand.new(command_name, command_split)
+            message = @cache_handler.retrieval_handler(retrieval_obj)
           else # The command name received is not supported
             message = INVALID_COMMAND_NAME_MSG
           end
@@ -74,8 +77,6 @@ module Memcached
       connection.close # Disconnect from the client
     end
 
-    private
-
     def validate_and_remove_ending!(command)
       command_ending = command[-2..-1] || command
       raise ArgumentClientError, CMD_TERMINATION_MSG unless command_ending == CMD_ENDING
@@ -91,6 +92,15 @@ module Memcached
       end
 
       validate_and_remove_ending!(data_block)
+    end
+
+    def purge_expired_keys
+      Thread.new{
+        loop{
+          sleep(PURGE_EXPIRED_KEYS_FREQUENCY_SECS)
+          @cache_handler.purge_expired_keys
+        }
+      }
     end
   end
 end

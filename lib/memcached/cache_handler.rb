@@ -1,18 +1,19 @@
 module Memcached
   class CacheHandler
+    include Util
+
     def initialize(max_cache_capacity = MAX_CACHE_CAPACITY)
       @cas_key = 0
       @cache = LRUCache.new(max_cache_capacity)
-      purge_expired_keys
     end
 
-    def cache_has_key?(key)
-      @cache.cache_has_key?(key)
-    end
+    # def has_key?(key)
+    #   @cache.has_key?(key)
+    # end
 
-    def cache
-      @cache
-    end
+    # def cache
+    #   @cache
+    # end
 
     def global_cas_key
       @cas_key += 1
@@ -39,17 +40,17 @@ module Memcached
       reply = ""
       retrieval_obj.keys.each do |key|
       ################### SYNCHRO
-        if cache_has_key?(key) # Keys that do not exists, do not appear on the response
-          flags, expdate, length, cas_key, data_block = cache.get(key)
+        if @cache.has_key?(key) # Keys that do not exists, do not appear on the response
+          item = @cache.get(key)
 
-          unless expdate.is_expired?
-            reply += VALUE_LABEL + "#{key} #{flags} #{length.to_s}"
+          unless is_expired? item[:expdate]
+            reply += VALUE_LABEL + "#{key} #{item[:flags]} #{item[:length].to_s}"
             if retrieval_obj.command_name == GETS_CMD_NAME
-              reply += " #{cas_key}"
+              reply += " #{item[:cas_key]}"
             end
             reply += CMD_ENDING
 
-            reply += "#{data_block}" + CMD_ENDING
+            reply += "#{item[:data_block]}" + CMD_ENDING
           end
         end
       ################## SYNCHRO
@@ -58,6 +59,18 @@ module Memcached
       reply
     end
 
+    def purge_expired_keys
+      ####################### SYNCHRO
+          puts "Purging expired keys ........"
+          @cache.cache.each do |key, value|
+            expdate = value[1]
+            if is_expired? expdate
+              @cache.remove_item_from_cache(key)
+            end
+          end
+      ####################### SYNCHRO
+      end
+
     private
 
     # [Prepend / Append]: adds 'data_block' to an existing key [before / after] existing data_block
@@ -65,24 +78,24 @@ module Memcached
       key = storage_obj.key
 
       ####################### SYNCHRO
-      if cache_has_key?(key) # the key exists in cache
+      if @cache.has_key?(key) # the key exists in cache
         # Append/prepend previously stored data_block
-        previous_db = cache.data_block(key)
+        previous_db = @cache.data_block(key)
         preapp_db = storage_obj.data_block
 
-        if @command_name == PREPEND_CMD_NAME
+        if storage_obj.command_name == PREPEND_CMD_NAME
           new_data_block = preapp_db.concat(previous_db)
         else
           new_data_block = previous_db.concat(preapp_db)
         end
 
-        previous_length = cache.length(key)
+        previous_length = @cache.length(key)
         preapp_length = storage_obj.length.to_i
         new_length = previous_length + preapp_length
 
         validate_data_block!(new_length, new_data_block)
         
-        message = @cache.update(key, new_length, global_cas_key, new_data_block)
+        message = @cache.store(key, @cache.flags(key), @cache.expdate(key), new_length, global_cas_key, new_data_block)
       else
         message = NOT_STORED_MSG
       end
@@ -95,10 +108,9 @@ module Memcached
       key = storage_obj.key
 
       ####################### SYNCHRO
-      cache_has_key = cache_has_key?(key)
+      cache_has_key = @cache.has_key?(key)
 
-      if (!cache_has_key && @command_name == ADD_CMD_NAME)
-        || (cache_has_key && @command_name == REPLACE_CMD_NAME)
+      if (!cache_has_key && storage_obj.command_name == ADD_CMD_NAME) || (cache_has_key && storage_obj.command_name == REPLACE_CMD_NAME)
         message = store_new_item(storage_obj)
       else
         message = NOT_STORED_MSG
@@ -113,12 +125,12 @@ module Memcached
       key = storage_obj.key
 
       ####################### SYNCHRO
-      cache_has_key = cache_has_key?(key)
-  
-      unless cache_has_key # The key does not exist in the cache
+      cache_has_key = @cache.has_key?(key)
+
+      if !cache_has_key # The key does not exist in the cache
         message = NOT_FOUND_MSG
       # The item has been modified since last fetch
-      elsif cache_has_key && (cache.cas_key(key) != storage_obj.cas_key)
+      elsif cache_has_key && (@cache.cas_key(key).to_i != storage_obj.cas_key.to_i)
         message = EXISTS_MSG
       else
         message = store_new_item(storage_obj)
@@ -130,15 +142,6 @@ module Memcached
 
     def store_new_item(storage_obj)
       message = @cache.store(storage_obj.key, storage_obj.flags, storage_obj.expdate, storage_obj.length, global_cas_key, storage_obj.data_block)
-    end
-
-    def purge_expired_keys
-      Thread.new do
-        loop{
-          sleep(PURGE_EXPIRED_KEYS_FREQUENCY_SECS)
-          @cache.purge_expired_keys
-        }.join
-      end
     end
   end
 end

@@ -3,7 +3,8 @@ module Memcached
     include Util
     PARAMETERS_MAX_LENGTH = 5
 
-    def initialize(parameters, data_block, parameters_max_length = PARAMETERS_MAX_LENGTH)
+    def initialize(command_name, parameters, data_block, parameters_max_length = PARAMETERS_MAX_LENGTH)
+      @command_name = command_name
       # max_length: number of maximum parameters expected (excluding command name)
       @parameters_max_length = parameters_max_length
       validate_number_of_parameters!(parameters)
@@ -40,6 +41,10 @@ module Memcached
       @no_reply
     end
 
+    def command_name
+      @command_name
+    end
+
     private
 
     def parameters_max_length
@@ -68,7 +73,7 @@ module Memcached
     def has_no_reply?(parameters)
       no_reply = false
       if parameters.length() == @parameters_max_length
-        raise ArgumentClientError, "\"#{NO_REPLY}\" was expected as the #{@parameters_max_length+1}th argument, but \"#{parameters[@parameters_max_length-1]}\" was received" + CMD_ENDING unless parameters[@parameters_max_length-1] == NO_REPLY
+        raise ArgumentClientError, CLIENT_ERROR + "\"#{NO_REPLY}\" was expected as the #{@parameters_max_length+1}th argument, but \"#{parameters[@parameters_max_length-1]}\" was received" + CMD_ENDING unless parameters[@parameters_max_length-1] == NO_REPLY
         no_reply = true
       end
       no_reply
@@ -76,7 +81,7 @@ module Memcached
 
     def validate_number_of_parameters!(parameters)
       validate_parameters_min_length!(parameters, parameters_max_length-1)
-      raise ArgumentClientError, TOO_MANY_ARGUMENTS unless parameters.length() <= @parameters_max_length
+      raise ArgumentClientError, TOO_MANY_ARGUMENTS_MSG unless parameters.length() <= @parameters_max_length
     end
 
     def validate_parameters!

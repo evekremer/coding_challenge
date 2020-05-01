@@ -1,5 +1,6 @@
 module Memcached
   # Response messages
+  CMD_ENDING = "\r\n"
   STORED_MSG = 'STORED' + CMD_ENDING
   NOT_STORED_MSG = 'NOT_STORED' + CMD_ENDING
   NOT_FOUND_MSG = 'NOT_FOUND' + CMD_ENDING
@@ -12,8 +13,8 @@ module Memcached
   UNIX_TIME = Time.new(1970,1,1)
   
   ONE_MEGABYTE = (2 ** 20)
-  KEY_MAX_LENGTH = 250
-  DATA_BLOCK_MAX_LENGTH = ONE_MEGABYTE # 1MB
+  MAX_KEY_LENGTH = 250
+  MAX_DATA_BLOCK_LENGTH = ONE_MEGABYTE # 1MB
   MAX_CAS_KEY = (2 ** 64) - 1 # 64-bit unsigned int
   MAX_CACHE_CAPACITY = 64 * ONE_MEGABYTE # 64MB
 
@@ -28,7 +29,6 @@ module Memcached
   CAS_CMD_NAME = 'cas'
   GET_CMD_NAME = 'get'
   GETS_CMD_NAME = 'gets'
-  CMD_ENDING = '\r\n'
   NO_REPLY = 'noreply'
 
   # Response error messages
@@ -58,50 +58,50 @@ module Memcached
   module Util
     def validate_key!(key)
       raise TypeClientError, KEY_NOT_PROVIDED unless key != ""
-      raise TypeClientError, KEY_WITH_CONTROL_CHARS_MSG if key.has_control_characters?
-      raise TypeClientError, KEY_TOO_LONG_MSG unless key.length() <= KEY_MAX_LENGTH
+      raise TypeClientError, KEY_WITH_CONTROL_CHARS_MSG if has_control_characters? key
+      raise TypeClientError, KEY_TOO_LONG_MSG unless key.length() <= MAX_KEY_LENGTH
     end
 
     def validate_exptime!(exptime)
-      raise TypeClientError, EXPTIME_TYPE_ERROR unless exptime.is_i?
+      raise TypeClientError, EXPTIME_TYPE_MSG unless is_i? exptime
     end
 
     def validate_length!(length)
-      raise TypeClientError, LENGTH_TYPE_ERROR unless length.is_unsigned_i?
+      raise TypeClientError, LENGTH_TYPE_MSG unless is_unsigned_i? length
     end
 
     def validate_flags!(flags)
-      raise TypeClientError, FLAGS_TYPE_ERROR unless flags.is_unsigned_i?(16)
+      raise TypeClientError, FLAGS_TYPE_MSG unless is_unsigned_i?(flags, 16)
     end
 
     def validate_parameters_min_length!(parameters, min_length)
-      raise ArgumentClientError, TOO_FEW_ARGUMENTS unless parameters.length() >= min_length
+      raise ArgumentClientError, TOO_FEW_ARGUMENTS_MSG unless parameters.length() >= min_length
     end
 
     def validate_data_block!(length, data_block)
       # Validate that data_block does not exceed maximum length
-      raise TypeClientError, DATA_BLOCK_TOO_LONG_MSG unless data_block.length() <= DATA_BLOCK_MAX_LENGTH
+      raise TypeClientError, DATA_BLOCK_TOO_LONG_MSG unless data_block.length() <= MAX_DATA_BLOCK_LENGTH
       
       # Validate that 'length' parameter corresponds to the actual data_block length
-      raise ArgumentClientError, "<length> (#{length}) is not equal to the length of the item's data_block (#{data_block.length()})" + CMD_ENDING unless data_block.length() == length.to_i
+      raise ArgumentClientError, CLIENT_ERROR + "<length> (#{length}) is not equal to the length of the item's data_block (#{data_block.length()})" + CMD_ENDING unless data_block.length() == length.to_i
     end
 
-    def is_unsigned_i?(num_bits = nil)
-      is_int = /\A\d+\z/ === self
-      within_valid_range = (num_bits ? self.to_i < 2**num_bits && self.to_i >= 0 : true )
+    def is_unsigned_i?(data, num_bits = nil)
+      is_int = /\A\d+\z/ === data
+      within_valid_range = (num_bits ? data.to_i < 2**num_bits && data.to_i >= 0 : true )
       is_int && within_valid_range
     end
 
-    def is_i?
-      /\A[-+]?\d+\z/ === self
+    def is_i?(data)
+      /\A[-+]?\d+\z/ === data
     end
 
-    def has_control_characters?
-      /\x00|[\cA-\cZ]/ =~ self
+    def has_control_characters?(data)
+      /\x00|[\cA-\cZ]/ =~ data
     end
 
-    def is_expired?
-      self.expdate.to_i != 0 && Time.now >= self.expdate
+    def is_expired?(data)
+      data.to_i != 0 && Time.now >= data
     end
   end
 end
