@@ -7,13 +7,9 @@ module Memcached
       @cache = LRUCache.new(max_cache_capacity)
     end
 
-    # def has_key?(key)
-    #   @cache.has_key?(key)
-    # end
-
-    # def cache
-    #   @cache
-    # end
+    def cache
+      @cache
+    end
 
     def global_cas_key
       @cas_key += 1
@@ -63,8 +59,7 @@ module Memcached
       ####################### SYNCHRO
           puts "Purging expired keys ........"
           @cache.cache.each do |key, value|
-            expdate = value[1]
-            if is_expired? expdate
+            if is_expired? value[:expdate]
               @cache.remove_item_from_cache(key)
             end
           end
@@ -85,7 +80,7 @@ module Memcached
 
         if storage_obj.command_name == PREPEND_CMD_NAME
           new_data_block = preapp_db.concat(previous_db)
-        else
+        else # Append
           new_data_block = previous_db.concat(preapp_db)
         end
 

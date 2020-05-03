@@ -5,8 +5,8 @@ module Memcached
     def initialize(parameters, data_block)
       super(CAS_CMD_NAME, parameters, data_block, CAS_PARAMETERS_MAX_LENGTH)
       
-      validate_cas! parameters[4]
-      @cas_key = parameters[4]
+      @cas_key = parameters[4].to_s
+      validate_cas!
     end
 
     def cas_key
@@ -15,7 +15,7 @@ module Memcached
 
     private
 
-    def validate_cas!(cas_key)
+    def validate_cas!
       raise TypeClientError, CAS_KEY_TYPE_MSG unless is_unsigned_i? cas_key, 64
     end
   end

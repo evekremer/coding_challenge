@@ -57,9 +57,10 @@ module Memcached
 
   module Util
     def validate_key!(key)
-      raise TypeClientError, KEY_NOT_PROVIDED unless key != ""
+      # raise TypeClientError, KEY_NOT_PROVIDED_MSG unless key != ""
+      raise TypeClientError, KEY_NOT_PROVIDED_MSG if key.to_s.empty?
       raise TypeClientError, KEY_WITH_CONTROL_CHARS_MSG if has_control_characters? key
-      raise TypeClientError, KEY_TOO_LONG_MSG unless key.length() <= MAX_KEY_LENGTH
+      raise TypeClientError, KEY_TOO_LONG_MSG unless key.to_s.length <= MAX_KEY_LENGTH
     end
 
     def validate_exptime!(exptime)
@@ -75,29 +76,45 @@ module Memcached
     end
 
     def validate_parameters_min_length!(parameters, min_length)
-      raise ArgumentClientError, TOO_FEW_ARGUMENTS_MSG unless parameters.length() >= min_length
+      raise ArgumentClientError, TOO_FEW_ARGUMENTS_MSG unless parameters.length >= min_length
+    end
+
+    def validate_parameters_max_length!(parameters, max_length)
+      raise ArgumentClientError, TOO_MANY_ARGUMENTS_MSG unless parameters.length <= max_length
     end
 
     def validate_data_block!(length, data_block)
       # Validate that data_block does not exceed maximum length
-      raise TypeClientError, DATA_BLOCK_TOO_LONG_MSG unless data_block.length() <= MAX_DATA_BLOCK_LENGTH
+      raise TypeClientError, DATA_BLOCK_TOO_LONG_MSG unless data_block.length <= MAX_DATA_BLOCK_LENGTH
       
       # Validate that 'length' parameter corresponds to the actual data_block length
-      raise ArgumentClientError, CLIENT_ERROR + "<length> (#{length}) is not equal to the length of the item's data_block (#{data_block.length()})" + CMD_ENDING unless data_block.length() == length.to_i
+      raise ArgumentClientError, CLIENT_ERROR + "<length> (#{length}) is not equal to the length of the item's data_block (#{data_block.length})" + CMD_ENDING unless data_block.length == length.to_i
+    end
+    
+    def validate_and_remove_ending!(command)
+      command_ending = command[-2..-1] || command
+      raise ArgumentClientError, CMD_TERMINATION_MSG unless command_ending == CMD_ENDING
+  
+      command[0..-3] || command
+    end
+
+    def validate_command_name!(names = [], command_name)
+      is_valid_command_name = names.include? command_name.to_s
+      raise ArgumentError unless is_valid_command_name
     end
 
     def is_unsigned_i?(data, num_bits = nil)
-      is_int = /\A\d+\z/ === data
+      is_int = /\A\d+\z/ === data.to_s
       within_valid_range = (num_bits ? data.to_i < 2**num_bits && data.to_i >= 0 : true )
       is_int && within_valid_range
     end
 
     def is_i?(data)
-      /\A[-+]?\d+\z/ === data
+      /\A[-+]?\d+\z/ === data.to_s
     end
 
     def has_control_characters?(data)
-      /\x00|[\cA-\cZ]/ =~ data
+      /\x00|[\cA-\cZ]/ =~ data.to_s
     end
 
     def is_expired?(data)

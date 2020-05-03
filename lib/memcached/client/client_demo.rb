@@ -81,7 +81,7 @@ module Memcached
         puts "#{@socket.gets}\n"
           #=> STORED
         
-        puts ">> Sleeps for #{PURGE_EXPIRED_KEYS_FREQUENCY_SECS+5} seconds...\n"
+        puts ">> Sleeps for #{PURGE_EXPIRED_KEYS_FREQUENCY_SECS+5} seconds...\n\n"
         sleep(PURGE_EXPIRED_KEYS_FREQUENCY_SECS+5)
 
         puts ">> get key_exptime\r\n"
@@ -151,9 +151,9 @@ module Memcached
         puts "#{@socket.gets}\n"
           #=> STORED
 
-        puts ">> prepend key5 330 222000 #{"data_block_key5".length()}\r\n"
+        puts ">> prepend key5 330 222000 #{"data_block_key5".length}\r\n"
         puts ">> data_block_key5\r\n"
-        @socket.puts "prepend key5 330 222000 #{"data_block_key5".length()}\r\n"
+        @socket.puts "prepend key5 330 222000 #{"data_block_key5".length}\r\n"
         @socket.puts "data_block_key5\r\n"
         puts "#{@socket.gets}\n"
           #=> STORED
@@ -301,7 +301,7 @@ module Memcached
 
         data_block = "d" * (2**20 + 1)
         puts ">> set data_block that exceeds maximum length (1MB)\n"
-        @socket.puts "set key16 3 300 #{data_block.length()}\r\n"
+        @socket.puts "set key16 3 300 #{data_block.length}\r\n"
         @socket.puts "#{data_block}\r\n"
         puts "#{@socket.gets}\n"
           #=> CLIENT_ERROR

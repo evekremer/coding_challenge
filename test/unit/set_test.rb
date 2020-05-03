@@ -255,4 +255,65 @@ class SetTest < BaseTest
     reply = send_get_cmd(key)
     assert_equal Memcached::END_MSG, reply
   end
+
+  ##### Test set error responses
+
+  def test_case_sensitive_set_upcase
+    socket.puts "#{Memcached::SET_CMD_NAME.upcase} #{key} #{flags} #{exptime} #{value.length}#{Memcached::CMD_ENDING}"
+    assert_equal Memcached::INVALID_COMMAND_NAME_MSG, read_reply
+
+    reply = send_get_cmd(key)
+    assert_equal Memcached::END_MSG, reply
+  end
+
+  def test_case_sensitive_set_titlecase
+    socket.puts "#{Memcached::SET_CMD_NAME.titlecase} #{key} #{flags} #{exptime} #{value.length}#{Memcached::CMD_ENDING}"
+    assert_equal Memcached::INVALID_COMMAND_NAME_MSG, read_reply
+
+    reply = send_get_cmd(key)
+    assert_equal Memcached::END_MSG, reply
+  end
+
+  def test_value_too_long
+    value = "v" * (Memcached::MAX_DATA_BLOCK_LENGTH + 1)
+
+    send_storage_cmd("#{Memcached::SET_CMD_NAME}", key, 4, 6230, value.length(), false, value, false)
+    assert_equal Memcached::DATA_BLOCK_TOO_LONG_MSG, read_reply
+    
+    reply = send_get_cmd(key)
+    assert_equal Memcached::END_MSG, reply
+  end
+
+  def test_key_too_long
+    key = "k" * (Memcached::MAX_KEY_LENGTH + 1)
+
+    send_storage_cmd("#{Memcached::SET_CMD_NAME}", key, 4, 6230, value.length(), false, value, false)
+    assert_equal Memcached::KEY_TOO_LONG_MSG, read_reply
+
+    socket.puts "get #{key}\r\n"
+    assert_equal Memcached::KEY_TOO_LONG_MSG, read_reply
+  end
+
+  def test_bad_termination_request_line_set
+    socket.puts "#{Memcached::SET_CMD_NAME} #{key} 5 5000 6"
+    reply = read_reply(2)
+    assert_equal Memcached::CMD_TERMINATION_MSG, reply
+  end
+
+  def test_bad_termination_datablock_set
+    socket.puts "#{Memcached::SET_CMD_NAME} key 9 89 5\r\n"
+    socket.puts "value$$"
+    
+    reply = read_reply(2)
+    assert_equal Memcached::CMD_TERMINATION_MSG, reply
+  end
+
+  def test_noreply_syntax_error_set
+    socket.puts "set #{key} 5 300 5 norep\r\n"
+    socket.puts "value\r\n"
+    assert_equal "CLIENT_ERROR \"#{Memcached::NOREPLY}\" was expected as the 6th argument, but \"norep\" was received\r\n", read_reply
+    
+    reply = send_get_cmd(key)
+    assert_equal Memcached::END_MSG, reply
+  end
 end

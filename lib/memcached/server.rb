@@ -55,8 +55,10 @@ module Memcached
             message = @cache_handler.storage_handler(storage_obj)
     
           elsif [GET_CMD_NAME, GETS_CMD_NAME].include? command_name
+
             retrieval_obj = RetrievalCommand.new(command_name, command_split)
             message = @cache_handler.retrieval_handler(retrieval_obj)
+            
           else # The command name received is not supported
             message = INVALID_COMMAND_NAME_MSG
           end
@@ -67,7 +69,6 @@ module Memcached
             connection.read_nonblock(MAX_DATA_BLOCK_LENGTH)
           end
           message = e.message
-          # request_handler(connection)
         end
 
         unless no_reply
@@ -77,18 +78,11 @@ module Memcached
       connection.close # Disconnect from the client
     end
 
-    def validate_and_remove_ending!(command)
-      command_ending = command[-2..-1] || command
-      raise ArgumentClientError, CMD_TERMINATION_MSG unless command_ending == CMD_ENDING
-  
-      command[0..-3] || command
-    end
-
     def read_data_block_request(length, connection)
       data_block = ""
       while line = connection.gets
         data_block += line
-        break if data_block.length() >= (length.to_i + 2)
+        break if data_block.length >= (length.to_i + 2)
       end
 
       validate_and_remove_ending!(data_block)
