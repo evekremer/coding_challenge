@@ -13,7 +13,7 @@ module Memcached
 
     def global_cas_key
       @cas_key += 1
-      @cas_key = (@cas_key).modulo(MAX_CAS_KEY)
+      @cas_key = (@cas_key).modulo(CAS_KEY_LIMIT)
       @cas_key
     end
 

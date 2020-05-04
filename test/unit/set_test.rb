@@ -2,318 +2,301 @@
 require_relative "../test_helper"
 
 class SetTest < BaseTest
-  def test_simple_set
-    send_storage_cmd("set", key, 2, 6000, value.length(), false, value, false)
+  def test_set_simple
+    send_storage_cmd(Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false)
     assert_equal Memcached::STORED_MSG, read_reply
 
-    # Get the item
-    reply = send_get_cmd(key)
-    assert_equal expected_get_response(key, 2, value.length(), value), reply
+    send_get_cmd key
+    expected_get = expected_get_response key, flags, value.length, value
+    assert_equal expected_get, read_reply 3
   end
 
-  def test_nil_key_set_1
-    request = "set 3 300 5\r\n"
-    socket.puts request
-    socket.puts "value\r\n"
-    assert_equal Memcached::TOO_FEW_ARGUMENTS_MSG, read_reply
-  end
-
-  def test_nil_key_set_2
-    send_storage_cmd("set", nil, 4, 800, value.length(), false, value, false)
+  def test_set_empty_key
+    key = ''
+    send_storage_cmd(Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false)
     assert_equal Memcached::KEY_NOT_PROVIDED_MSG, read_reply
   end
 
-  def test_empty_value_set
-    # set with value = nil and length = 0
-    send_storage_cmd("set", key, 7, 800, 0, false, nil, false)
+  def test_set_empty_value
+    value = ''
+    send_storage_cmd(Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false)
     assert_equal Memcached::STORED_MSG, read_reply
 
-    # Get the item with empty value
-    reply = send_get_cmd(key)
-    assert_equal expected_get_response(key, 7, 0, nil), reply
+    send_get_cmd key
+    expected_get = expected_get_response key, flags, value.length, value
+    assert_equal expected_get, read_reply 3
   end
 
-  def test_no_reply_set
-    # Send "set" command with <noreply>
-    send_storage_cmd("set", key, 3, 300, value.length(), false, value, true)
+  def test_set_no_reply
+    no_reply = true
+    send_storage_cmd(Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, no_reply)
 
-    # Get the item
-    reply = send_get_cmd(key)
-    assert_equal expected_get_response(key, 3, value.length(), value), reply
+    send_get_cmd key
+    expected_get = expected_get_response key, flags, value.length, value
+    assert_equal expected_get, read_reply 3
   end
 
   #### Test control characters included in value
   # Unstructured data is terminated by \r\n, even though \r, \n or any other 8-bit characters may also appear inside the data
   
-  def test_value_with_control_chars_set_1
+  def test_set_value_with_control_chars_1
     value = "val\r\nwith\r\ntermination\r\nchars"
 
-    send_storage_cmd("set", key, 1, 800, value.length(), false, value, false)
+    send_storage_cmd(Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false)
     assert_equal Memcached::STORED_MSG, read_reply
 
-    # Get the item
-    reply = send_get_cmd(key, false, value.length())
-    assert_equal expected_get_response(key, 1, value.length(), value), reply
+    send_get_cmd key
+    expected_get = expected_get_response key, flags, value.length, value
+    assert_equal expected_get, read_reply 3 + value.count("\n")
   end
 
-  def test_value_with_control_chars_set_2
+  def test_set_value_with_control_chars_2
     value = "value\twith\b\acontrol\nchars"
-
-    send_storage_cmd("set", key, 9, 800, value.length(), false, value, false)
+    send_storage_cmd(Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false)
     assert_equal Memcached::STORED_MSG, read_reply
 
-    # Get the item
-    reply = send_get_cmd(key, false, value.length())
-    assert_equal expected_get_response(key, 9, value.length(), value), reply
+    send_get_cmd(key)
+    assert_equal expected_get_response(key, flags, value.length, value), read_reply 3
   end
 
-  def test_value_with_control_chars_set_3
+  def test_set_value_with_control_chars_3
     value = "\r\n"
 
-    send_storage_cmd("set", key, 3, 800, value.length(), false, value, false)
+    send_storage_cmd(Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false)
     assert_equal Memcached::STORED_MSG, read_reply
 
-    # Get the item
-    reply = send_get_cmd(key, false, value.length())
-    assert_equal expected_get_response(key, 3, value.length(), value), reply
+    send_get_cmd key
+    expected_get = expected_get_response key, flags, value.length, value
+    assert_equal expected_get, read_reply 3 + value.count("\n")
   end
 
-  def test_value_with_control_chars_set_4
+  def test_set_value_with_control_chars_tab
     value = "\t"
 
-    send_storage_cmd("set", key, 2, 800, value.length(), false, value, false)
+    send_storage_cmd(Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false)
     assert_equal Memcached::STORED_MSG, read_reply
 
-    # Get the item
-    reply = send_get_cmd(key, false, value.length())
-    assert_equal expected_get_response(key, 2, value.length(), value), reply
+    send_get_cmd key
+    expected_get = expected_get_response key, flags, value.length, value
+    assert_equal expected_get, read_reply 3
   end
 
-  def test_value_with_control_chars_set_5
-    value = "\t\0\b\n\n\n\r\n"
+  def test_set_value_with_control_chars_5
+    value = "\t\0\b\n\n\n"
 
-    send_storage_cmd("set", key, 5, 800, value.length(), false, value, false)
+    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false
     assert_equal Memcached::STORED_MSG, read_reply
 
-    # Get the item
-    reply = send_get_cmd(key, false, value.length())
-    assert_equal expected_get_response(key, 5, value.length(), value), reply
+    send_get_cmd key
+    expected_get = expected_get_response key, flags, value.length, value
+    assert_equal expected_get, read_reply 3 + value.count("\n")
   end
 
-  def test_value_with_multiple_ending_chars
-    value = "\r\nmemcached\r\nmemcached\r\n\r\nmemcached\r\nmemcached\r\n\r\n\r\n\r\n"
+  def test_set_value_with_multiple_ending_chars
+    value = "\r\nmemcached\r\nmemcached\r\n\r\nmemcached\r\nmemcached\r\n\r\n\r\n"
 
-    send_storage_cmd("set", key, 6, 600, value.length(), false, value, false)
+    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false
     assert_equal Memcached::STORED_MSG, read_reply
 
-    # Get the item
-    reply = send_get_cmd(key, false, value.length())
-    assert_equal expected_get_response(key, 6, value.length(), value), reply
+    send_get_cmd key
+    expected_get = expected_get_response key, flags, value.length, value
+    assert_equal expected_get, read_reply 3 + value.count("\n")
   end
 
   # ####     Test invalid parameters
 
   # #=> Key
 
-  def test_key_with_whitespaces
-    key = "key with whitespaces"
-
-    send_storage_cmd("set", key, 9, 43782, value.length(), false, value, false)
+  def test_set_key_with_whitespaces
+    key = 'key with whitespaces'
+    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false
     assert_equal Memcached::TOO_MANY_ARGUMENTS_MSG, read_reply
 
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
   end
 
-  def test_key_with_control_characters_1
+  def test_set_key_with_control_characters_1
     key1 = "key\0withnull"
-    send_storage_cmd("set", key1, 9, 4382, value.length(), false, value, false)
+    send_storage_cmd(Memcached::SET_CMD_NAME, key1, flags, exptime, value.length, false, value, false)
     assert_equal Memcached::KEY_WITH_CONTROL_CHARS_MSG, read_reply
 
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
   end
 
-  def test_key_with_control_characters_2
+  def test_set_key_with_control_characters_2
     key2 = "key\twith\ttabs"
-    send_storage_cmd("set", key2, 9, 4382, value.length(), false, value, false)
+    send_storage_cmd(Memcached::SET_CMD_NAME, key2, flags, exptime, value.length, false, value, false)
     assert_equal Memcached::KEY_WITH_CONTROL_CHARS_MSG, read_reply
 
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
   end
 
-  def test_key_with_control_characters_3
+  def test_set_key_with_control_characters_3
     key3 = "\a\akey\bwith\vmultiple_control\f_chars"
-    send_storage_cmd("set", key3, 9, 4382, value.length(), false, value, false)
+    send_storage_cmd(Memcached::SET_CMD_NAME, key3, flags, exptime, value.length, false, value, false)
     assert_equal Memcached::KEY_WITH_CONTROL_CHARS_MSG, read_reply
 
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
   end
 
-  def test_key_with_control_characters_4
-    key4 = "\nkey\nwith\nmultiple_new_lines\n"
-    send_storage_cmd("set", key4, 9, 4382, value.length(), false, value, false)
-    reply = read_reply(2)
-    assert_equal Memcached::CMD_TERMINATION_MSG, reply
+  def test_set_key_with_control_characters_4
+    key = "\nkey\nwith\nmultiple_new_lines\n"
+    send_storage_cmd(Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false)
+    assert_equal Memcached::CMD_TERMINATION_MSG, read_reply 2
+
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
   end
 
   # #=> Flags
 
-  def test_negative_flags_set
-    send_storage_cmd("set", key, -4, 300, value.length(), false, value, false)
+  def test_set_negative_flags
+    flags = -4
+    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false
     assert_equal Memcached::FLAGS_TYPE_MSG, read_reply
 
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
   end
 
-  def test_flags_exceeds_max_set
+  def test_set_flags_exceeds_max
     # flags bigger than the maximum 16-bit integer
-    send_storage_cmd("set", key, (2**16)+1, 300, value.length(), false, value, false)
+    flags = FLAGS_LIMIT + 1
+    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false
     assert_equal Memcached::FLAGS_TYPE_MSG, read_reply
 
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
   end
 
-  def test_string_flags_set
-    send_storage_cmd("set", key, "abc", 300, value.length(), false, value, false)
+  def test_set_string_flags
+    flags = 'abc'
+    send_storage_cmd(Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false)
     assert_equal Memcached::FLAGS_TYPE_MSG, read_reply
 
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
   end
 
-  def test_nil_flags_set
-    send_storage_cmd("set", key, nil, 300, value.length(), false, value, false)
+  def test_set_empty_flags
+    flags = ''
+    send_storage_cmd(Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false)
     assert_equal Memcached::FLAGS_TYPE_MSG, read_reply
 
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
   end
 
   # #=> Exptime
 
-  def test_string_exptime_set
-    send_storage_cmd("set", key, 3, "test_exptime", value.length(), false, value, false)
+  def test_set_string_exptime_without_digits
+    exptime = 'test_exptime'
+    send_storage_cmd(Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false)
     assert_equal Memcached::EXPTIME_TYPE_MSG, read_reply
 
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
   end
 
-  def test_nil_exptime_set
-    send_storage_cmd("set", key, 3, nil, value.length(), false, value, false)
+  def test_set_empty_exptime
+    exptime = ''
+    send_storage_cmd(Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false)
     assert_equal Memcached::EXPTIME_TYPE_MSG, read_reply
 
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
   end
 
   # #=> Length
 
-  def test_negative_length_set
-    send_storage_cmd("set", key, 3, 300, -6, false, value, false)
+  def test_set_negative_length
+    negative_length = -6
+    send_storage_cmd(Memcached::SET_CMD_NAME, key, flags, exptime, negative_length, false, value, false)
     assert_equal Memcached::LENGTH_TYPE_MSG, read_reply
 
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
   end
 
-  def test_string_length_set
-    send_storage_cmd("set", key, 3, 300, "test_length", false, value, false)
+  def test_set_string_length_without_digits
+    length_without_digits = 'test_length'
+    send_storage_cmd(Memcached::SET_CMD_NAME, key, flags, exptime, length_without_digits, false, value, false)
     assert_equal Memcached::LENGTH_TYPE_MSG, read_reply
 
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
   end
 
-  def test_nil_length_set
-    send_storage_cmd("set", key, 3, 300, nil, false, value, false)
+  def test_set_nil_length
+    length = ''
+    send_storage_cmd(Memcached::SET_CMD_NAME, key, flags, exptime, length, false, value, false)
     assert_equal Memcached::TOO_FEW_ARGUMENTS_MSG, read_reply
 
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
   end
 
-  # def test_incorrect_length_bigger_set
-  #   # Bigger 'length' than the actual length of the value
-  #   send_storage_cmd("set", key, 2, 3000, value.length()+5, false, value, false)
-  #   assert_equal "CLIENT_ERROR <length> (#{value.length()+5}) is not equal to the length of the item's data_block (#{value.length()})\r\n", read_reply
-
-  #   reply = send_get_cmd(key)
-  #   assert_equal Memcached::END_MSG, reply
-  # end
-
-  def test_incorrect_length_smaller_set
+  def test_set_incorrect_length_smaller
     # Smaller 'length' than the actual length of the value
-    send_storage_cmd("set", key, 2, 3000, value.length()-4, false, value, false)
-    assert_equal "CLIENT_ERROR <length> (#{value.length()-4}) is not equal to the length of the item's data_block (#{value.length()})\r\n", read_reply 
-
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
+    incorrect_length = value.length-4
+    
+    send_storage_cmd(Memcached::SET_CMD_NAME, key, flags, exptime, incorrect_length, false, value, false)
+    assert_equal Memcached::CLIENT_ERROR + "<length> (#{incorrect_length}) is not equal to the length of the item's data_block (#{value.length})" + Memcached::CMD_ENDING, read_reply 
+  
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
   end
 
   ##### Test set error responses
 
-  def test_case_sensitive_set_upcase
-    socket.puts "#{Memcached::SET_CMD_NAME.upcase} #{key} #{flags} #{exptime} #{value.length}#{Memcached::CMD_ENDING}"
-    assert_equal Memcached::INVALID_COMMAND_NAME_MSG, read_reply
+  def test_set_value_too_long
+    value = 'v' * (Memcached::MAX_DATA_BLOCK_LENGTH + 1)
 
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
-  end
-
-  def test_case_sensitive_set_titlecase
-    socket.puts "#{Memcached::SET_CMD_NAME.titlecase} #{key} #{flags} #{exptime} #{value.length}#{Memcached::CMD_ENDING}"
-    assert_equal Memcached::INVALID_COMMAND_NAME_MSG, read_reply
-
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
-  end
-
-  def test_value_too_long
-    value = "v" * (Memcached::MAX_DATA_BLOCK_LENGTH + 1)
-
-    send_storage_cmd("#{Memcached::SET_CMD_NAME}", key, 4, 6230, value.length(), false, value, false)
+    send_storage_cmd("#{Memcached::SET_CMD_NAME}", key, flags, exptime, value.length, false, value, false)
     assert_equal Memcached::DATA_BLOCK_TOO_LONG_MSG, read_reply
-    
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
+
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
   end
 
-  def test_key_too_long
-    key = "k" * (Memcached::MAX_KEY_LENGTH + 1)
-
-    send_storage_cmd("#{Memcached::SET_CMD_NAME}", key, 4, 6230, value.length(), false, value, false)
+  def test_set_key_too_long
+    key = 'k' * (Memcached::MAX_KEY_LENGTH + 1)
+    send_storage_cmd(Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false)
     assert_equal Memcached::KEY_TOO_LONG_MSG, read_reply
 
-    socket.puts "get #{key}\r\n"
-    assert_equal Memcached::KEY_TOO_LONG_MSG, read_reply
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
   end
 
-  def test_bad_termination_request_line_set
-    socket.puts "#{Memcached::SET_CMD_NAME} #{key} 5 5000 6"
-    reply = read_reply(2)
-    assert_equal Memcached::CMD_TERMINATION_MSG, reply
+  def test_set_bad_termination_request_line
+    socket.puts "#{Memcached::SET_CMD_NAME} #{key} #{flags} #{exptime} #{value.length}"
+    assert_equal Memcached::CMD_TERMINATION_MSG, read_reply 2
+
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
   end
 
-  def test_bad_termination_datablock_set
-    socket.puts "#{Memcached::SET_CMD_NAME} key 9 89 5\r\n"
-    socket.puts "value$$"
-    
-    reply = read_reply(2)
-    assert_equal Memcached::CMD_TERMINATION_MSG, reply
+  def test_set_bad_termination_datablock
+    socket.puts "#{Memcached::SET_CMD_NAME} #{key} #{flags} #{exptime} #{value.length}" + Memcached::CMD_ENDING
+    socket.puts "#{value}$$"
+    assert_equal Memcached::CMD_TERMINATION_MSG, reply_reply 2
+
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
   end
 
-  def test_noreply_syntax_error_set
-    socket.puts "set #{key} 5 300 5 norep\r\n"
-    socket.puts "value\r\n"
-    assert_equal "CLIENT_ERROR \"#{Memcached::NOREPLY}\" was expected as the 6th argument, but \"norep\" was received\r\n", read_reply
-    
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
+  def test_set_noreply_syntax_error
+    wrong_syntax_no_reply = 'norep'
+
+    socket.puts "#{Memcached::SET_CMD_NAME} #{key} #{flags} #{exptime} #{value.length} #{wrong_syntax_no_reply}" + Memcached::CMD_ENDING
+    socket.puts "#{value}" + Memcached::CMD_ENDING
+    assert_equal Memcached::CLIENT_ERROR + "\"#{Memcached::NOREPLY}\" was expected as the 6th argument, but \"#{wrong_syntax_no_reply}\" was received" + Memcached::CMD_ENDING, read_reply
+  
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
   end
 end

@@ -3,7 +3,7 @@ require_relative "../test_helper"
 class PurgeExpiredTest < BaseTest
   def test_exptime_set
     # Set item that expires in 3 seconds (exptime = 3)
-    send_storage_cmd("set", key, 8, 3, value.length(), false, value, false)
+    send_storage_cmd("#{Memcached::SET_CMD_NAME}", key, 8, 3, value.length(), false, value, false)
     assert_equal Memcached::STORED_MSG, read_reply
 
     # Get stored item
@@ -20,18 +20,18 @@ class PurgeExpiredTest < BaseTest
   def test_set_negative_and_unix_exptime
     # Set item that expires immediately (exptime < 0)
     exptime = -3
-    send_storage_cmd("set", "#{key}1", 1, exptime, value.length(), false, value, false)
+    send_storage_cmd("#{Memcached::SET_CMD_NAME}", "#{key}1", 1, exptime, value.length(), false, value, false)
     assert_equal Memcached::STORED_MSG, read_reply
 
     # Set item with unix exptime (exptime >= 30 days)
     # 1 second from 1/1/1970
     exptime = (30 * Memcached::SECONDS_PER_DAY) + 1
-    send_storage_cmd("set", "#{key}2", 4, exptime, value.length(), false, value, false)
+    send_storage_cmd("#{Memcached::SET_CMD_NAME}", "#{key}2", 4, exptime, value.length(), false, value, false)
     assert_equal Memcached::STORED_MSG, read_reply
 
     # 50 seconds prior current time
     exptime = (30 * Memcached::SECONDS_PER_DAY) + Time.now.to_i - 50
-    send_storage_cmd("set", "#{key}3", 8, exptime, value.length(), false, value, false)
+    send_storage_cmd("#{Memcached::SET_CMD_NAME}", "#{key}3", 8, exptime, value.length(), false, value, false)
     assert_equal Memcached::STORED_MSG, read_reply
     
     wait_for_purge_exec
@@ -46,7 +46,7 @@ class PurgeExpiredTest < BaseTest
     # 120 seconds from current time in unix
     exptime = (30 * Memcached::SECONDS_PER_DAY) + Time.now.to_i + 120
     
-    send_storage_cmd("set", key, 9, exptime, value.length(), false, value, false)
+    send_storage_cmd("#{Memcached::SET_CMD_NAME}", key, 9, exptime, value.length(), false, value, false)
     assert_equal Memcached::STORED_MSG, read_reply
     
     wait_for_purge_exec
@@ -64,7 +64,7 @@ class PurgeExpiredTest < BaseTest
       key_ = "key_exp#{i}"
       value_ = "value_exp#{i}"
       
-      send_storage_cmd("set", key_, 4, exptime+1, value_.length(), false, value_, true)
+      send_storage_cmd("#{Memcached::SET_CMD_NAME}", key_, 4, exptime+1, value_.length(), false, value_, true)
       keys[i] = key_
     }
 
@@ -84,10 +84,10 @@ class PurgeExpiredTest < BaseTest
       value_ = "#{value}#{i}"
       if i < 10
         # Immediatelly expires (exptime = -1)
-        send_storage_cmd("set", key_, 4, -1, value_.length(), false, value_, true)
+        send_storage_cmd("#{Memcached::SET_CMD_NAME}", key_, 4, -1, value_.length(), false, value_, true)
       else
         # Expires in 1000 seconds
-        send_storage_cmd("set", key_, 4, 1000, value_.length(), false, value_, true)
+        send_storage_cmd("#{Memcached::SET_CMD_NAME}", key_, 4, 1000, value_.length(), false, value_, true)
         exp_reply_multi += expected_get_response(key_, 4, value_.length(), value_, false, true)
       end
       keys[i] = key_

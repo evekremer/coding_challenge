@@ -51,7 +51,6 @@ class StorageCommandTest < BaseTest
     exception = assert_raise Memcached::TypeClientError do
       retrieval_obj = Memcached::RetrievalCommand.new(Memcached::GET_CMD_NAME, keys)
     end
-
     assert_equal Memcached::KEY_NOT_PROVIDED_MSG, exception.message
   end
 
@@ -62,7 +61,6 @@ class StorageCommandTest < BaseTest
     exception = assert_raise Memcached::TypeClientError do
       retrieval_obj = Memcached::RetrievalCommand.new(Memcached::GET_CMD_NAME, keys)
     end
-
     assert_equal Memcached::KEY_WITH_CONTROL_CHARS_MSG, exception.message
   end
 
@@ -73,7 +71,6 @@ class StorageCommandTest < BaseTest
     exception = assert_raise Memcached::TypeClientError do
       retrieval_obj = Memcached::RetrievalCommand.new(Memcached::GET_CMD_NAME, keys)
     end
-
     assert_equal Memcached::KEY_TOO_LONG_MSG, exception.message
   end
 
@@ -83,13 +80,11 @@ class StorageCommandTest < BaseTest
     exception = assert_raise Memcached::TypeClientError do
       retrieval_obj = Memcached::RetrievalCommand.new(Memcached::GET_CMD_NAME, keys)
     end
-
     assert_equal Memcached::KEY_NOT_PROVIDED_MSG, exception.message
   end
 
   def test_coerces_string_type_key
-    key_ = rand(5) # Numeric key
-    keys = [key_]
+    keys = [rand(5)] # Numeric key
     retrieval_obj = Memcached::RetrievalCommand.new(Memcached::GET_CMD_NAME, keys)
 
     assert_equal keys[0].to_s, retrieval_obj.keys[0]
@@ -103,7 +98,6 @@ class StorageCommandTest < BaseTest
     exception = assert_raise Memcached::ArgumentClientError do
       retrieval_obj = Memcached::RetrievalCommand.new(Memcached::GET_CMD_NAME, keys)
     end
-
     assert_equal Memcached::TOO_FEW_ARGUMENTS_MSG, exception.message
   end
 

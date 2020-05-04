@@ -114,22 +114,6 @@ class CasTest < BaseTest
 
   ##### Test cas error responses
 
-  def test_case_sensitive_cas_upcase
-    socket.puts "#{Memcached::CAS_CMD_NAME.upcase} #{key} #{flags} #{exptime} #{value.length} #{cas_key}#{Memcached::CMD_ENDING}"
-    assert_equal Memcached::INVALID_COMMAND_NAME_MSG, read_reply
-
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
-  end
-
-  def test_case_sensitive_cas_titlecase
-    socket.puts "#{Memcached::CAS_CMD_NAME.titlecase} #{key} #{flags} #{exptime} #{value.length} #{cas_key}#{Memcached::CMD_ENDING}"
-    assert_equal Memcached::INVALID_COMMAND_NAME_MSG, read_reply
-
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
-  end
-
   def test_noreply_syntax_error_cas_1
     socket.puts "cas #{key} 5 300 5 10 noreplynoreply\r\n"
     socket.puts "value\r\n"

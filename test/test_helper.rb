@@ -41,21 +41,20 @@ class BaseTest < Test::Unit::TestCase
 
   def send_get_cmd(key, gets = false, length = false)
     if gets
-      cmd = Memcached::GETS_CMD_NAME
+      cmd_name = Memcached::GETS_CMD_NAME
     else
-      cmd = Memcached::GET_CMD_NAME
+      cmd_name = Memcached::GET_CMD_NAME
     end
-    cmd += " #{key}" + Memcached::CMD_ENDING
-    @socket.puts cmd
+    @socket.puts "#{cmd_name} #{key}#{Memcached::CMD_ENDING}"
 
     # Get reply
-    reply = ""
-    reply += @socket.gets
-    unless reply == Memcached::END_MSG
-      reply += length ? @socket.read(length+2) : @socket.gets
-      reply += @socket.gets
-    end
-    reply
+    # reply = ""
+    # reply += @socket.gets
+    # unless reply == Memcached::END_MSG
+    #   reply += length ? @socket.read(length+2) : @socket.gets
+    #   reply += @socket.gets
+    # end
+    # reply
   end
 
   def expected_get_response(key, flags, length, value, unique_cas_key = false, multi = false)
@@ -115,9 +114,10 @@ class BaseTest < Test::Unit::TestCase
   def value
     "value_" + caller.first[/.*[` ](.*)'/, 1]
   end
+  alias :data_block :value
 
   def flags
-    rand(500)
+    5
   end
 
   def exptime

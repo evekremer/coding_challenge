@@ -52,22 +52,6 @@ class AddReplaceTest < BaseTest
     reply = send_get_cmd(key)
     assert_equal expected_get_response(key, 2, value.length(), value), reply
   end
-  
-  def test_case_sensitive_add_upcase
-    socket.puts "#{Memcached::ADD_CMD_NAME.upcase} #{key} #{flags} #{exptime} #{value.length}#{Memcached::CMD_ENDING}"
-    assert_equal Memcached::INVALID_COMMAND_NAME_MSG, read_reply
-
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
-  end
-
-  def test_case_sensitive_add_titlecase
-    socket.puts "#{Memcached::ADD_CMD_NAME.titlecase} #{key} #{flags} #{exptime} #{value.length}#{Memcached::CMD_ENDING}"
-    assert_equal Memcached::INVALID_COMMAND_NAME_MSG, read_reply
-
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
-  end
 
   ###########     Replace     ###########
 
@@ -123,21 +107,5 @@ class AddReplaceTest < BaseTest
     # Get stored item
     reply = send_get_cmd(key)
     assert_equal expected_get_response(key, 2, val2.length(), val2), reply
-  end
-
-  def test_case_sensitive_replace_upcase
-    socket.puts "#{Memcached::REPLACE_CMD_NAME.upcase} #{key} #{flags} #{exptime} #{value.length}#{Memcached::CMD_ENDING}"
-    assert_equal Memcached::INVALID_COMMAND_NAME_MSG, read_reply
-
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
-  end
-
-  def test_case_sensitive_replace_titlecase
-    socket.puts "#{Memcached::REPLACE_CMD_NAME.titlecase} #{key} #{flags} #{exptime} #{value.length}#{Memcached::CMD_ENDING}"
-    assert_equal Memcached::INVALID_COMMAND_NAME_MSG, read_reply
-
-    reply = send_get_cmd(key)
-    assert_equal Memcached::END_MSG, reply
   end
 end

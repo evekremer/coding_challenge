@@ -16,7 +16,7 @@ module Memcached
     private
 
     def validate_cas!
-      raise TypeClientError, CAS_KEY_TYPE_MSG unless is_unsigned_i? cas_key, 64
+      raise TypeClientError, CAS_KEY_TYPE_MSG unless is_unsigned_i? cas_key, CAS_KEY_LIMIT
     end
   end
 end

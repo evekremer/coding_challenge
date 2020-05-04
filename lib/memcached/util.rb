@@ -15,7 +15,10 @@ module Memcached
   ONE_MEGABYTE = (2 ** 20)
   MAX_KEY_LENGTH = 250
   MAX_DATA_BLOCK_LENGTH = ONE_MEGABYTE # 1MB
-  MAX_CAS_KEY = (2 ** 64) - 1 # 64-bit unsigned int
+
+  CAS_KEY_LIMIT = (2 ** 64) - 1 # 64-bit unsigned int
+  FLAGS_LIMIT = (2 ** 16) - 1 # 16-bit unsigned int
+
   MAX_CACHE_CAPACITY = 64 * ONE_MEGABYTE # 64MB
 
   PURGE_EXPIRED_KEYS_FREQUENCY_SECS = 10
@@ -57,9 +60,8 @@ module Memcached
 
   module Util
     def validate_key!(key)
-      # raise TypeClientError, KEY_NOT_PROVIDED_MSG unless key != ""
       raise TypeClientError, KEY_NOT_PROVIDED_MSG if key.to_s.empty?
-      raise TypeClientError, KEY_WITH_CONTROL_CHARS_MSG if has_control_characters? key
+      raise TypeClientError, KEY_WITH_CONTROL_CHARS_MSG if contains_control_characters? key
       raise TypeClientError, KEY_TOO_LONG_MSG unless key.to_s.length <= MAX_KEY_LENGTH
     end
 
@@ -72,7 +74,7 @@ module Memcached
     end
 
     def validate_flags!(flags)
-      raise TypeClientError, FLAGS_TYPE_MSG unless is_unsigned_i?(flags, 16)
+      raise TypeClientError, FLAGS_TYPE_MSG unless is_unsigned_i? flags, FLAGS_LIMIT
     end
 
     def validate_parameters_min_length!(parameters, min_length)
@@ -94,31 +96,46 @@ module Memcached
     def validate_and_remove_ending!(command)
       command_ending = command[-2..-1] || command
       raise ArgumentClientError, CMD_TERMINATION_MSG unless command_ending == CMD_ENDING
-  
+
       command[0..-3] || command
     end
 
-    def validate_command_name!(names = [], command_name)
+    def validate_command_name!(names, command_name)
       is_valid_command_name = names.include? command_name.to_s
       raise ArgumentError unless is_valid_command_name
     end
 
-    def is_unsigned_i?(data, num_bits = nil)
-      is_int = /\A\d+\z/ === data.to_s
-      within_valid_range = (num_bits ? data.to_i < 2**num_bits && data.to_i >= 0 : true )
-      is_int && within_valid_range
+    def is_unsigned_i?(data, limit = nil)
+      is_unsigned_int = /\A\d+\z/ =~ data.to_s
+
+      if is_unsigned_int && limit && limit_int = Integer(limit)
+        data_int = Integer(data)
+        is_inside_bounds = data_int < limit_int
+      else
+        is_inside_bounds = true
+      end
+
+      is_unsigned_int && is_inside_bounds
     end
 
     def is_i?(data)
-      /\A[-+]?\d+\z/ === data.to_s
+      /\A[-+]?\d+\z/ =~ data.to_s
     end
 
-    def has_control_characters?(data)
+    def contains_control_characters?(data)
       /\x00|[\cA-\cZ]/ =~ data.to_s
     end
 
-    def is_expired?(data)
-      data.to_i != 0 && Time.now >= data
+    def is_expired?(time)
+      if time.is_a? Time
+        is_expired = time <= Time.now
+      else # never expires 
+        time_ = Integer(time)
+        raise ArgumentError unless time_ == 0
+        is_expired = false
+      end
+      
+      is_expired
     end
   end
 end
