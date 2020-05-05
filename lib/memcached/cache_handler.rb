@@ -60,7 +60,7 @@ module Memcached
           puts "Purging expired keys ........"
           @cache.cache.each do |key, value|
             if is_expired? value[:expdate]
-              @cache.remove_item_from_cache(key)
+              @cache.remove_item_from_cache key
             end
           end
       ####################### SYNCHRO
@@ -69,18 +69,18 @@ module Memcached
     private
 
     # [Prepend / Append]: adds 'data_block' to an existing key [before / after] existing data_block
-    def pre_append(storage_obj)
+    def pre_append storage_obj
       key = storage_obj.key
 
       ####################### SYNCHRO
-      if @cache.has_key?(key) # the key exists in cache
+      if @cache.has_key? key # the key exists in cache
         # Append/prepend previously stored data_block
-        previous_db = @cache.data_block(key)
+        previous_db = String.new @cache.data_block key
         preapp_db = storage_obj.data_block
 
         if storage_obj.command_name == PREPEND_CMD_NAME
           new_data_block = preapp_db.concat(previous_db)
-        else # Append
+        elsif storage_obj.command_name == APPEND_CMD_NAME
           new_data_block = previous_db.concat(preapp_db)
         end
 
@@ -88,8 +88,8 @@ module Memcached
         preapp_length = storage_obj.length.to_i
         new_length = previous_length + preapp_length
 
-        validate_data_block!(new_length, new_data_block)
-        
+        validate_data_block! new_length, new_data_block
+
         message = @cache.store(key, @cache.flags(key), @cache.expdate(key), new_length, global_cas_key, new_data_block)
       else
         message = NOT_STORED_MSG

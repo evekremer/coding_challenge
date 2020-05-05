@@ -8,14 +8,14 @@ class StorageCommandTest < BaseTest
 
   def test_valid_get_command_name
     keys = ["#{key}"]
-    retrieval_obj = Memcached::RetrievalCommand.new(Memcached::GET_CMD_NAME, keys)
+    retrieval_obj = Memcached::RetrievalCommand.new Memcached::GET_CMD_NAME, keys
 
     assert_equal Memcached::GET_CMD_NAME, retrieval_obj.command_name
   end
 
   def test_valid_gets_command_name
     keys = ["#{key}"]
-    retrieval_obj = Memcached::RetrievalCommand.new(Memcached::GETS_CMD_NAME, keys)
+    retrieval_obj = Memcached::RetrievalCommand.new Memcached::GETS_CMD_NAME, keys
 
     assert_equal Memcached::GETS_CMD_NAME, retrieval_obj.command_name
   end
@@ -24,7 +24,7 @@ class StorageCommandTest < BaseTest
     keys = ["#{key}"]
 
     assert_raise ArgumentError do
-      retrieval_obj = Memcached::RetrievalCommand.new(value, keys)
+      retrieval_obj = Memcached::RetrievalCommand.new value, keys
     end
   end
 
@@ -32,7 +32,7 @@ class StorageCommandTest < BaseTest
     keys = ["#{key}"]
 
     assert_raise ArgumentError do
-      retrieval_obj = Memcached::RetrievalCommand.new(flags, keys)
+      retrieval_obj = Memcached::RetrievalCommand.new flags, keys
     end
   end
 
@@ -40,7 +40,7 @@ class StorageCommandTest < BaseTest
   
   def test_valid_key
     keys = ["#{key}"]
-    retrieval_obj = Memcached::RetrievalCommand.new(Memcached::GET_CMD_NAME, keys)
+    retrieval_obj = Memcached::RetrievalCommand.new Memcached::GET_CMD_NAME, keys
 
     assert_equal keys, retrieval_obj.keys
   end
@@ -49,7 +49,7 @@ class StorageCommandTest < BaseTest
     keys = ['']
     
     exception = assert_raise Memcached::TypeClientError do
-      retrieval_obj = Memcached::RetrievalCommand.new(Memcached::GET_CMD_NAME, keys)
+      retrieval_obj = Memcached::RetrievalCommand.new Memcached::GET_CMD_NAME, keys
     end
     assert_equal Memcached::KEY_NOT_PROVIDED_MSG, exception.message
   end
@@ -59,7 +59,7 @@ class StorageCommandTest < BaseTest
     keys = ["#{key}"]
 
     exception = assert_raise Memcached::TypeClientError do
-      retrieval_obj = Memcached::RetrievalCommand.new(Memcached::GET_CMD_NAME, keys)
+      retrieval_obj = Memcached::RetrievalCommand.new Memcached::GET_CMD_NAME, keys
     end
     assert_equal Memcached::KEY_WITH_CONTROL_CHARS_MSG, exception.message
   end
@@ -69,7 +69,7 @@ class StorageCommandTest < BaseTest
     keys = ["#{key}"]
 
     exception = assert_raise Memcached::TypeClientError do
-      retrieval_obj = Memcached::RetrievalCommand.new(Memcached::GET_CMD_NAME, keys)
+      retrieval_obj = Memcached::RetrievalCommand.new Memcached::GET_CMD_NAME, keys
     end
     assert_equal Memcached::KEY_TOO_LONG_MSG, exception.message
   end
@@ -78,14 +78,14 @@ class StorageCommandTest < BaseTest
     keys = [nil]
 
     exception = assert_raise Memcached::TypeClientError do
-      retrieval_obj = Memcached::RetrievalCommand.new(Memcached::GET_CMD_NAME, keys)
+      retrieval_obj = Memcached::RetrievalCommand.new Memcached::GET_CMD_NAME, keys
     end
     assert_equal Memcached::KEY_NOT_PROVIDED_MSG, exception.message
   end
 
   def test_coerces_string_type_key
-    keys = [rand(5)] # Numeric key
-    retrieval_obj = Memcached::RetrievalCommand.new(Memcached::GET_CMD_NAME, keys)
+    keys = [6] # Numeric key
+    retrieval_obj = Memcached::RetrievalCommand.new Memcached::GET_CMD_NAME, keys
 
     assert_equal keys[0].to_s, retrieval_obj.keys[0]
   end
@@ -96,7 +96,7 @@ class StorageCommandTest < BaseTest
     keys = []
 
     exception = assert_raise Memcached::ArgumentClientError do
-      retrieval_obj = Memcached::RetrievalCommand.new(Memcached::GET_CMD_NAME, keys)
+      retrieval_obj = Memcached::RetrievalCommand.new Memcached::GET_CMD_NAME, keys
     end
     assert_equal Memcached::TOO_FEW_ARGUMENTS_MSG, exception.message
   end
@@ -105,7 +105,7 @@ class StorageCommandTest < BaseTest
     keys = 1
 
     assert_raise TypeError do
-      retrieval_obj = Memcached::RetrievalCommand.new(Memcached::GET_CMD_NAME, keys)
+      retrieval_obj = Memcached::RetrievalCommand.new Memcached::GET_CMD_NAME, keys
     end
   end
 end

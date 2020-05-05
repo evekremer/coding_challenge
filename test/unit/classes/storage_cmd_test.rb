@@ -8,35 +8,35 @@ class StorageCommandTest < BaseTest
 
   def test_valid_set_command_name
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
-    storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+    storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
 
     assert_equal Memcached::SET_CMD_NAME, storage_obj.command_name
   end
 
   def test_valid_add_command_name
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
-    storage_obj = Memcached::StorageCommand.new(Memcached::ADD_CMD_NAME, parameters, data_block)
+    storage_obj = Memcached::StorageCommand.new Memcached::ADD_CMD_NAME, parameters, data_block
 
     assert_equal Memcached::ADD_CMD_NAME, storage_obj.command_name
   end
 
   def test_valid_replace_command_name
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
-    storage_obj = Memcached::StorageCommand.new(Memcached::REPLACE_CMD_NAME, parameters, data_block)
+    storage_obj = Memcached::StorageCommand.new Memcached::REPLACE_CMD_NAME, parameters, data_block
 
     assert_equal Memcached::REPLACE_CMD_NAME, storage_obj.command_name
   end
 
   def test_valid_prepend_command_name
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
-    storage_obj = Memcached::StorageCommand.new(Memcached::PREPEND_CMD_NAME, parameters, data_block)
+    storage_obj = Memcached::StorageCommand.new Memcached::PREPEND_CMD_NAME, parameters, data_block
 
     assert_equal Memcached::PREPEND_CMD_NAME, storage_obj.command_name
   end
 
   def test_valid_append_command_name
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
-    storage_obj = Memcached::StorageCommand.new(Memcached::APPEND_CMD_NAME, parameters, data_block)
+    storage_obj = Memcached::StorageCommand.new Memcached::APPEND_CMD_NAME, parameters, data_block
 
     assert_equal Memcached::APPEND_CMD_NAME, storage_obj.command_name
   end
@@ -45,7 +45,7 @@ class StorageCommandTest < BaseTest
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
 
     assert_raise ArgumentError do
-      storage_obj = Memcached::StorageCommand.new(data_block, parameters, data_block)
+      storage_obj = Memcached::StorageCommand.new data_block, parameters, data_block
     end
   end
 
@@ -53,7 +53,7 @@ class StorageCommandTest < BaseTest
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
 
     assert_raise ArgumentError do
-      storage_obj = Memcached::StorageCommand.new(data_block.length, parameters, data_block)
+      storage_obj = Memcached::StorageCommand.new data_block.length, parameters, data_block
     end
   end
 
@@ -61,16 +61,17 @@ class StorageCommandTest < BaseTest
   
   def test_valid_key
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
-    storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+    storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
 
     assert_equal parameters[0], storage_obj.key
   end
 
   def test_key_not_provided
-    parameters = ['', "#{flags}", "#{exptime}", "#{data_block.length}"]
+    key = ''
+    parameters = [key, "#{flags}", "#{exptime}", "#{data_block.length}"]
     
     exception = assert_raise Memcached::TypeClientError do
-      storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+      storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
     end
     assert_equal Memcached::KEY_NOT_PROVIDED_MSG, exception.message
   end
@@ -80,7 +81,7 @@ class StorageCommandTest < BaseTest
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
 
     exception = assert_raise Memcached::TypeClientError do
-      storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+      storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
     end
     assert_equal Memcached::KEY_WITH_CONTROL_CHARS_MSG, exception.message
   end
@@ -90,7 +91,7 @@ class StorageCommandTest < BaseTest
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
 
     exception = assert_raise Memcached::TypeClientError do
-      storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+      storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
     end
     assert_equal Memcached::KEY_TOO_LONG_MSG, exception.message
   end
@@ -100,14 +101,14 @@ class StorageCommandTest < BaseTest
     parameters = [key, "#{flags}", "#{exptime}", "#{data_block.length}"]
 
     exception = assert_raise Memcached::TypeClientError do
-      storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+      storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
     end
     assert_equal Memcached::KEY_NOT_PROVIDED_MSG, exception.message
   end
 
   def test_coerces_string_type_key
     parameters = [key.length, "#{flags}", "#{exptime}", "#{data_block.length}"] # Numeric key
-    storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+    storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
 
     assert_equal parameters[0].to_s, storage_obj.key
   end
@@ -116,7 +117,7 @@ class StorageCommandTest < BaseTest
 
   def test_valid_flags
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
-    storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+    storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
 
     assert_equal parameters[1], storage_obj.flags
   end
@@ -126,7 +127,7 @@ class StorageCommandTest < BaseTest
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
 
     exception = assert_raise Memcached::TypeClientError do
-      storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+      storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
     end
     assert_equal Memcached::FLAGS_TYPE_MSG, exception.message
   end
@@ -136,7 +137,7 @@ class StorageCommandTest < BaseTest
     parameters = ["#{key}", flags, "#{exptime}", "#{data_block.length}"]
 
     exception = assert_raise Memcached::TypeClientError do
-      storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+      storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
     end
     assert_equal Memcached::FLAGS_TYPE_MSG, exception.message
   end
@@ -144,7 +145,7 @@ class StorageCommandTest < BaseTest
   def test_coerces_string_type_flags
     flags = 1 # Numeric flags
     parameters = ["#{key}", flags, "#{exptime}", "#{data_block.length}"]
-    storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+    storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
 
     assert_equal flags.to_s, storage_obj.flags
   end
@@ -154,7 +155,7 @@ class StorageCommandTest < BaseTest
   def test_valid_exptime
     exptime = 40
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
-    storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+    storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
 
     assert_equal Time.now.round + exptime, storage_obj.expdate.round # Offset from current time
   end
@@ -162,15 +163,15 @@ class StorageCommandTest < BaseTest
   def test_valid_exptime_zero
     exptime = 0
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
-    storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+    storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
 
-    assert_equal 0, storage_obj.expdate # Never expires
+    assert_equal exptime, storage_obj.expdate # Never expires
   end
 
   def test_valid_exptime_negative
-    exptime = -4
+    exptime = -1000
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
-    storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+    storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
 
     assert_equal Time.now.round, storage_obj.expdate.round # Immediately expired
   end
@@ -178,7 +179,7 @@ class StorageCommandTest < BaseTest
   def test_valid_exptime_unix_time
     exptime = 30 * (Memcached::SECONDS_PER_DAY + 1)
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
-    storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+    storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
 
     assert_equal Memcached::UNIX_TIME + exptime, storage_obj.expdate # Offset from 1/1/1970 (Unix time)
   end
@@ -188,7 +189,7 @@ class StorageCommandTest < BaseTest
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
 
     exception = assert_raise Memcached::TypeClientError do
-      storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+      storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
     end
     assert_equal Memcached::EXPTIME_TYPE_MSG, exception.message
   end
@@ -198,7 +199,7 @@ class StorageCommandTest < BaseTest
     parameters = ["#{key}", "#{flags}", exptime, "#{data_block.length}"]
 
     exception = assert_raise Memcached::TypeClientError do
-      storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+      storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
     end
     assert_equal Memcached::EXPTIME_TYPE_MSG, exception.message
   end
@@ -208,7 +209,7 @@ class StorageCommandTest < BaseTest
     parameters = ["#{key}", "#{flags}", exptime, "#{data_block.length}"]
 
     exception = assert_raise Memcached::TypeClientError do
-      storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+      storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
     end
     assert_equal Memcached::EXPTIME_TYPE_MSG, exception.message
   end
@@ -217,7 +218,7 @@ class StorageCommandTest < BaseTest
 
   def test_valid_length
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
-    storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+    storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
 
     assert_equal parameters[3], storage_obj.length
   end
@@ -227,7 +228,7 @@ class StorageCommandTest < BaseTest
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{length}"]
 
     exception = assert_raise Memcached::TypeClientError do
-      storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+      storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
     end
     assert_equal Memcached::LENGTH_TYPE_MSG, exception.message
   end
@@ -237,14 +238,14 @@ class StorageCommandTest < BaseTest
     parameters = ["#{key}", "#{flags}", "#{exptime}", length]
 
     exception = assert_raise Memcached::TypeClientError do
-      storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+      storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
     end
     assert_equal Memcached::LENGTH_TYPE_MSG, exception.message
   end
 
   def test_coerces_string_type_length
     parameters = ["#{key}", "#{flags}", "#{exptime}", data_block.length] # Numeric length
-    storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+    storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
 
     assert_equal parameters[3].to_s, storage_obj.length
   end
@@ -253,7 +254,7 @@ class StorageCommandTest < BaseTest
 
   def test_valid_datablock
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
-    storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+    storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
 
     assert_equal data_block, storage_obj.data_block
   end
@@ -263,9 +264,11 @@ class StorageCommandTest < BaseTest
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{invalid_datablock_length}"]
 
     exception = assert_raise Memcached::ArgumentClientError do
-      storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+      storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
     end
-    assert_equal Memcached::CLIENT_ERROR + "<length> (#{invalid_datablock_length}) is not equal to the length of the item's data_block (#{data_block.length})" + Memcached::CMD_ENDING, exception.message
+
+    expected_exception_message = Memcached::CLIENT_ERROR + "<length> (#{invalid_datablock_length}) is not equal to the length of the item's data_block (#{data_block.length})" + Memcached::CMD_ENDING
+    assert_equal expected_exception_message, exception.message
   end
 
   def test_invalid_datablock_max_length
@@ -273,15 +276,15 @@ class StorageCommandTest < BaseTest
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
 
     exception = assert_raise Memcached::TypeClientError do
-      storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+      storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
     end
     assert_equal Memcached::DATA_BLOCK_TOO_LONG_MSG, exception.message
   end
 
   def test_empty_datablock
-    data_block = '' # Considered valid
+    data_block = ''
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
-    storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+    storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
 
     assert_equal data_block, storage_obj.data_block
   end
@@ -289,7 +292,7 @@ class StorageCommandTest < BaseTest
   def test_coerces_string_type_datablock
     data_block = '123'
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
-    storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+    storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
 
     assert_equal data_block, storage_obj.data_block
   end
@@ -298,7 +301,7 @@ class StorageCommandTest < BaseTest
   
   def test_default_parameters_max_length
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
-    storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+    storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
 
     assert_equal Memcached::StorageCommand::PARAMETERS_MAX_LENGTH, storage_obj.parameters_max_length
   end
@@ -307,7 +310,7 @@ class StorageCommandTest < BaseTest
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
 
     parameters_max_length = '5'
-    storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block, parameters_max_length)
+    storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block, parameters_max_length
 
     assert_equal parameters_max_length.to_i, storage_obj.parameters_max_length
   end
@@ -316,7 +319,7 @@ class StorageCommandTest < BaseTest
     parameters = []
 
     exception = assert_raise Memcached::ArgumentClientError do
-      storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, value)
+      storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
     end
     assert_equal Memcached::TOO_FEW_ARGUMENTS_MSG, exception.message
   end
@@ -325,7 +328,7 @@ class StorageCommandTest < BaseTest
     parameters = 1
 
     assert_raise TypeError do
-      storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, value)
+      storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
     end
   end
 
@@ -334,7 +337,7 @@ class StorageCommandTest < BaseTest
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}", "#{Memcached::NO_REPLY}", extra]
 
     exception = assert_raise Memcached::ArgumentClientError do
-      storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+      storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
     end
     assert_equal Memcached::TOO_MANY_ARGUMENTS_MSG, exception.message
   end
@@ -343,24 +346,26 @@ class StorageCommandTest < BaseTest
 
   def test_with_valid_no_reply
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}", "#{Memcached::NO_REPLY}"]
-    storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+    storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
 
     assert storage_obj.no_reply
   end
 
   def test_with_syntax_error_no_reply
-    no_reply = 'no__replyy'
+    no_reply = "#{Memcached::NO_REPLY}__"
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}", "#{no_reply}"]
 
     exception = assert_raise Memcached::ArgumentClientError do
-      storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+      storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
     end
-    assert_equal Memcached::CLIENT_ERROR + "\"#{Memcached::NO_REPLY}\" was expected as the #{Memcached::StorageCommand::PARAMETERS_MAX_LENGTH+1}th argument, but \"#{no_reply}\" was received" + Memcached::CMD_ENDING, exception.message
+    
+    expected_exception_msg = "#{Memcached::CLIENT_ERROR}\"#{Memcached::NO_REPLY}\" was expected as the #{Memcached::StorageCommand::PARAMETERS_MAX_LENGTH+1}th argument, but \"#{no_reply}\" was received#{Memcached::CMD_ENDING}"
+    assert_equal expected_exception_msg, exception.message
   end
 
   def test_without_no_reply
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
-    storage_obj = Memcached::StorageCommand.new(Memcached::SET_CMD_NAME, parameters, data_block)
+    storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
 
     refute storage_obj.no_reply
   end

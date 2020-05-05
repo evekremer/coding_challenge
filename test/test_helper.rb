@@ -46,15 +46,6 @@ class BaseTest < Test::Unit::TestCase
       cmd_name = Memcached::GET_CMD_NAME
     end
     @socket.puts "#{cmd_name} #{key}#{Memcached::CMD_ENDING}"
-
-    # Get reply
-    # reply = ""
-    # reply += @socket.gets
-    # unless reply == Memcached::END_MSG
-    #   reply += length ? @socket.read(length+2) : @socket.gets
-    #   reply += @socket.gets
-    # end
-    # reply
   end
 
   def expected_get_response(key, flags, length, value, unique_cas_key = false, multi = false)
@@ -101,7 +92,7 @@ class BaseTest < Test::Unit::TestCase
     read_reply((keys.length() * 2) + 1)
   end
   
-  def read_reply(num_lines = 1)
+  def read_reply num_lines = 1
     reply = ""
     num_lines.times { reply += @socket.gets }
     reply
@@ -115,6 +106,10 @@ class BaseTest < Test::Unit::TestCase
     "value_" + caller.first[/.*[` ](.*)'/, 1]
   end
   alias :data_block :value
+
+  def new_value
+    'new_value'
+  end
 
   def flags
     5
