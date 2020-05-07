@@ -1,4 +1,4 @@
-require_relative './memcached/util'
+require_relative './memcached/mixin'
 require_relative './memcached/commands/storage'
 require_relative './memcached/commands/cas'
 require_relative './memcached/commands/retrieval'

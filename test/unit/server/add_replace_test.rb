@@ -3,7 +3,7 @@
 
 require_relative "../test_helper"
 
-class AddReplaceTest < BaseTest
+class ServerAddReplaceTest < BaseTest
 
   ###########     Add     ###########
 

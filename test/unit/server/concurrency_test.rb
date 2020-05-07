@@ -1,6 +1,6 @@
 require_relative "../test_helper"
 
-class ConcurrencyTest < BaseTest
+class ServerConcurrencyTest < BaseTest
   def test_multiple_threads_set_get
     Array.new(10) do |n|
       Thread.new do

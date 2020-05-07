@@ -3,7 +3,7 @@ require_relative "../../test_helper"
 
 # Unit test for Memcached::CasCommand class
 class Memcached::CasCommandTest < BaseTest
-
+  include Memcached::Mixin
   #################### Test command_name attribute
 
   def test_valid_cas_command_name
@@ -65,7 +65,7 @@ class Memcached::CasCommandTest < BaseTest
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}", "#{cas_key}"]
     
     storage_obj = Memcached::CasCommand.new parameters, data_block
-    assert_equal Memcached::CasCommand::CAS_PARAMETERS_MAX_LENGTH, storage_obj.parameters_max_length
+    assert_equal Memcached::CAS_CMD_PARAMETERS_MAX_LENGTH, storage_obj.parameters_max_length
   end
   
   def test_less_parameters_than_min_length
@@ -103,7 +103,8 @@ class Memcached::CasCommandTest < BaseTest
     exception = assert_raise Memcached::ArgumentClientError do
       storage_obj = Memcached::CasCommand.new parameters, data_block
     end
-    assert_equal Memcached::CLIENT_ERROR + "\"#{Memcached::NO_REPLY}\" was expected as the #{Memcached::CasCommand::CAS_PARAMETERS_MAX_LENGTH+1}th argument, but \"#{parameters[Memcached::CasCommand::CAS_PARAMETERS_MAX_LENGTH-1]}\" was received" + Memcached::CMD_ENDING, exception.message
+    excepted_message = no_reply_syntax_error_msg no_reply, Memcached::CAS_CMD_PARAMETERS_MAX_LENGTH
+    assert_equal excepted_message, exception.message
   end
 
   def test_without_no_reply

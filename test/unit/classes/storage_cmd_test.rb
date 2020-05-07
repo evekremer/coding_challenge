@@ -3,7 +3,7 @@ require_relative "../../test_helper"
 
 # Unit test for Memcached::StorageCommand class
 class StorageCommandTest < BaseTest
-
+  include Memcached::Mixin
   #################### Test command_name attribute
 
   def test_valid_set_command_name
@@ -266,9 +266,8 @@ class StorageCommandTest < BaseTest
     exception = assert_raise Memcached::ArgumentClientError do
       storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
     end
-
-    expected_exception_message = Memcached::CLIENT_ERROR + "<length> (#{invalid_datablock_length}) is not equal to the length of the item's data_block (#{data_block.length})" + Memcached::CMD_ENDING
-    assert_equal expected_exception_message, exception.message
+    excepted_msg = data_block_length_error_msg invalid_datablock_length, data_block
+    assert_equal excepted_msg, exception.message
   end
 
   def test_invalid_datablock_max_length
@@ -303,7 +302,7 @@ class StorageCommandTest < BaseTest
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
     storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
 
-    assert_equal Memcached::StorageCommand::PARAMETERS_MAX_LENGTH, storage_obj.parameters_max_length
+    assert_equal Memcached::STORAGE_CMD_PARAMETERS_MAX_LENGTH, storage_obj.parameters_max_length
   end
 
   def test_coerces_integer_type_parameters_max_length
@@ -358,9 +357,8 @@ class StorageCommandTest < BaseTest
     exception = assert_raise Memcached::ArgumentClientError do
       storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
     end
-    
-    expected_exception_msg = "#{Memcached::CLIENT_ERROR}\"#{Memcached::NO_REPLY}\" was expected as the #{Memcached::StorageCommand::PARAMETERS_MAX_LENGTH+1}th argument, but \"#{no_reply}\" was received#{Memcached::CMD_ENDING}"
-    assert_equal expected_exception_msg, exception.message
+    expected_msg = no_reply_syntax_error_msg no_reply, Memcached::STORAGE_CMD_PARAMETERS_MAX_LENGTH
+    assert_equal expected_msg, exception.message
   end
 
   def test_without_no_reply

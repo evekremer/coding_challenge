@@ -1,6 +1,6 @@
 require_relative "../test_helper"
 
-class GetGetsTest < BaseTest
+class ServerGetGetsTest < BaseTest
 
   ###########     Get     ###########
 

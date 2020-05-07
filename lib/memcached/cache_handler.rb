@@ -1,10 +1,10 @@
 module Memcached
   class CacheHandler
-    include Util
+    include Mixin
 
-    def initialize(max_cache_capacity = MAX_CACHE_CAPACITY)
+    def initialize max_cache_capacity = MAX_CACHE_CAPACITY
       @cas_key = 0
-      @cache = LRUCache.new(max_cache_capacity)
+      @cache = LRUCache.new max_cache_capacity
     end
 
     def cache
@@ -13,26 +13,32 @@ module Memcached
 
     def global_cas_key
       @cas_key += 1
-      @cas_key = (@cas_key).modulo(CAS_KEY_LIMIT)
+      @cas_key = @cas_key.modulo(CAS_KEY_LIMIT)
       @cas_key
     end
 
-    def storage_handler(storage_obj)
+    def storage_handler storage_obj
+
       case storage_obj.command_name
+
       when SET_CMD_NAME
-        message = store_new_item(storage_obj)
+        message = store_new_item storage_obj
+
       when ADD_CMD_NAME, REPLACE_CMD_NAME
-        message = add_replace(storage_obj)
+        message = add_replace storage_obj
+
       when PREPEND_CMD_NAME, APPEND_CMD_NAME
-        message = pre_append(storage_obj)
+        message = pre_append storage_obj
+
       when CAS_CMD_NAME
-        message = cas(storage_obj)
+        message = cas storage_obj
       end
+
       message
     end
 
     # Retrieves the value stored at 'keys'.
-    def retrieval_handler(retrieval_obj)
+    def retrieval_handler retrieval_obj
       reply = ""
       retrieval_obj.keys.each do |key|
       ################### SYNCHRO
@@ -80,17 +86,19 @@ module Memcached
 
         if storage_obj.command_name == PREPEND_CMD_NAME
           new_data_block = preapp_db.concat(previous_db)
+
         elsif storage_obj.command_name == APPEND_CMD_NAME
           new_data_block = previous_db.concat(preapp_db)
+
         end
 
         previous_length = @cache.length(key)
         preapp_length = storage_obj.length.to_i
         new_length = previous_length + preapp_length
 
-        validate_data_block! new_length, new_data_block
+        validate_data_block_length! new_length, new_data_block
 
-        message = @cache.store(key, @cache.flags(key), @cache.expdate(key), new_length, global_cas_key, new_data_block)
+        message = @cache.store key, @cache.flags(key), @cache.expdate(key), new_length, global_cas_key, new_data_block
       else
         message = NOT_STORED_MSG
       end
@@ -128,15 +136,15 @@ module Memcached
       elsif cache_has_key && (@cache.cas_key(key).to_i != storage_obj.cas_key.to_i)
         message = EXISTS_MSG
       else
-        message = store_new_item(storage_obj)
+        message = store_new_item storage_obj
       end
       ####################### SYNCHRO
       message
       
     end
 
-    def store_new_item(storage_obj)
-      message = @cache.store(storage_obj.key, storage_obj.flags, storage_obj.expdate, storage_obj.length, global_cas_key, storage_obj.data_block)
+    def store_new_item storage_obj
+      message = @cache.store storage_obj.key, storage_obj.flags, storage_obj.expdate, storage_obj.length, global_cas_key, storage_obj.data_block
     end
   end
 end

@@ -3,9 +3,9 @@
 
 require_relative "../test_helper"
 
-class PreAppendTest < BaseTest
+class ServerPreAppendTest < BaseTest
   ###########     Append     ###########
-
+  include Memcached::Mixin
   def test_simple_append
     send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false
     assert_equal Memcached::STORED_MSG, read_reply
@@ -112,7 +112,9 @@ class PreAppendTest < BaseTest
 
     smaller_length = new_value.length - 3
     send_storage_cmd Memcached::PREPEND_CMD_NAME, key, flags, exptime, smaller_length, false, new_value, false
-    assert_equal Memcached::CLIENT_ERROR + "<length> (#{smaller_length}) is not equal to the length of the item's data_block (#{new_value.length})" + Memcached::CMD_ENDING, read_reply
+
+    excepted_reply = data_block_length_error_msg smaller_length, new_value
+    assert_equal excepted_reply, read_reply
 
     send_get_cmd key
     expected_msg = expected_get_response key, flags, value.length, value
@@ -125,7 +127,9 @@ class PreAppendTest < BaseTest
 
     smaller_length = new_value.length - 3
     send_storage_cmd Memcached::APPEND_CMD_NAME, key, flags, exptime, smaller_length, false, new_value, false
-    assert_equal Memcached::CLIENT_ERROR + "<length> (#{smaller_length}) is not equal to the length of the item's data_block (#{new_value.length})" + Memcached::CMD_ENDING, read_reply
+    
+    excepted_reply = data_block_length_error_msg smaller_length, new_value
+    assert_equal excepted_reply, read_reply
 
     send_get_cmd key
     expected_msg = expected_get_response key, flags, value.length, value

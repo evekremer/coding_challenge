@@ -3,7 +3,6 @@ require_relative "../../test_helper"
 # Unit test for Memcached::Server class
 class ServerTest < BaseTest
 
-  ######## Incorrect command termination
   def test_numeric_request_line
     socket.puts 111111
     assert_equal Memcached::CMD_TERMINATION_MSG, read_reply
@@ -20,7 +19,37 @@ class ServerTest < BaseTest
     assert_equal Memcached::END_MSG, read_reply
   end
 
+  def test_invalid_termination_request_line
+    socket.puts "#{Memcached::SET_CMD_NAME} #{key} #{flags} #{exptime} #{value.length}"
+    assert_equal Memcached::CMD_TERMINATION_MSG, read_reply
+
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
+  end
+
+  def test_invalid_termination_datablock
+    socket.puts "#{Memcached::SET_CMD_NAME} #{key} #{flags} #{exptime} #{value.length}#{Memcached::CMD_ENDING}"
+    invalid_termination = '$$'
+    socket.puts "#{value}#{invalid_termination}"
+    assert_equal Memcached::CMD_TERMINATION_MSG, read_reply
+
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
+  end
+
+  def test_smaller_length_datablock
+    incorrect_length = value.length - 4
+    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, incorrect_length, false, value, false
+    
+    excepted_reply = data_block_length_error_msg incorrect_length, value
+    assert_equal excepted_reply, read_reply
+  
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
+  end
+
   ######## Invalid command name error
+
   def test_invalid_command_name
     command_name = 'invalid_command_name'
     socket.puts "#{command_name} #{key} #{flags} #{exptime} #{value.length}#{Memcached::CMD_ENDING}"

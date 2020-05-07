@@ -2,7 +2,7 @@ require_relative "../test_helper"
 
 # Test that inserts with full cache cause older data to be purged in least recently used (LRU) order
 
-class LruTest < BaseTest
+class ServerLruTest < BaseTest
   def test_lru
     ##########     Set     ##########
 

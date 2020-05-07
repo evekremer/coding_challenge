@@ -1,9 +1,9 @@
 module Memcached
   class RetrievalCommand
-    include Util
+    include Mixin
     PARAMETERS_MIN_LENGTH_RETRIEVAL = 1
     
-    def initialize(command_name, keys)
+    def initialize command_name, keys
       @command_name = command_name.to_s
       @keys = keys
 
@@ -21,8 +21,8 @@ module Memcached
     private
 
     def validate!
-      validate_command_name! [GET_CMD_NAME, GETS_CMD_NAME], command_name
-      
+      raise ArgumentError unless RETRIEVAL_CMDS.include? command_name
+
       raise TypeError unless keys.is_a? Array
       validate_parameters_min_length! keys, PARAMETERS_MIN_LENGTH_RETRIEVAL
       

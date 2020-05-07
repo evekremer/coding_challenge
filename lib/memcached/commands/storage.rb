@@ -1,11 +1,10 @@
 module Memcached
   class StorageCommand
-    include Util
-    PARAMETERS_MAX_LENGTH = 5
+    include Mixin
 
-    def initialize(command_name, parameters, data_block, parameters_max_length = PARAMETERS_MAX_LENGTH)
+    def initialize command_name, parameters, data_block, parameters_max_length = STORAGE_CMD_PARAMETERS_MAX_LENGTH
       @command_name = command_name.to_s
-      validate_command_name! [SET_CMD_NAME, ADD_CMD_NAME, REPLACE_CMD_NAME, CAS_CMD_NAME, PREPEND_CMD_NAME, APPEND_CMD_NAME], command_name
+      raise ArgumentError unless STORAGE_CMDS.include? command_name
 
       # max_length: number of maximum parameters expected (excluding command name)
       @parameters_max_length = parameters_max_length.to_i
@@ -54,7 +53,7 @@ module Memcached
     private
 
     # Determine the expiration date corresponding to the <exptime> parameter received
-    def expiration_date(exptime)
+    def expiration_date exptime
       validate_exptime! exptime
 
       expt = exptime.to_i
@@ -72,16 +71,23 @@ module Memcached
     end
 
     # Determine if the optional "noreply" parameter is included in command
-    def has_no_reply?(parameters)
+    def has_no_reply? parameters
       no_reply = false
       if parameters.length == @parameters_max_length
-        raise ArgumentClientError, CLIENT_ERROR + "\"#{NO_REPLY}\" was expected as the #{@parameters_max_length+1}th argument, but \"#{parameters[@parameters_max_length-1]}\" was received" + CMD_ENDING unless parameters[@parameters_max_length-1] == NO_REPLY
-        no_reply = true
+        
+        no_reply_received = parameters[@parameters_max_length-1]
+        
+        if no_reply_received == NO_REPLY
+          no_reply = true
+        else
+          raise ArgumentClientError, (no_reply_syntax_error_msg no_reply_received, parameters_max_length)
+        end
+
       end
       no_reply
     end
 
-    def validate_number_of_parameters!(parameters)
+    def validate_number_of_parameters! parameters
       raise TypeError unless parameters.is_a? Array
       validate_parameters_min_length! parameters, parameters_max_length-1
       validate_parameters_max_length! parameters, parameters_max_length
@@ -95,7 +101,7 @@ module Memcached
       validate_key! key
       validate_flags! flags
       validate_length! length
-      validate_data_block! length, data_block
+      validate_data_block_length! length, data_block
     end
   end
 end

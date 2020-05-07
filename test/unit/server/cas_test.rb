@@ -1,8 +1,8 @@
 #"cas" is a check and set operation which means "store this data but only if no one else has updated since I last fetched it."
 require_relative "../test_helper"
 
-class CasTest < BaseTest
-
+class ServerCasTest < BaseTest
+  include Memcached::Mixin
   def test_simple_cas
     send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false
     assert_equal Memcached::STORED_MSG, read_reply
@@ -127,7 +127,8 @@ class CasTest < BaseTest
     socket.puts "#{Memcached::CAS_CMD_NAME} #{key} #{flags} #{exptime} #{value.length} #{cas_key} #{no_reply}#{Memcached::CMD_ENDING}"
     socket.puts "#{value}#{Memcached::CMD_ENDING}"
 
-    assert_equal "#{Memcached::CLIENT_ERROR}\"#{Memcached::NO_REPLY}\" was expected as the 7th argument, but \"#{no_reply}\" was received#{Memcached::CMD_ENDING}", read_reply
+    excepted_reply = no_reply_syntax_error_msg no_reply, Memcached::CAS_CMD_PARAMETERS_MAX_LENGTH
+    assert_equal excepted_reply, read_reply
 
     send_get_cmd key
     assert_equal Memcached::END_MSG, read_reply

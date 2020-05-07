@@ -1,7 +1,9 @@
 
 require_relative "../test_helper"
 
-class SetTest < BaseTest
+class ServerSetTest < BaseTest
+
+  include Memcached::Mixin
 
   def test_set_simple
     send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false
@@ -309,17 +311,6 @@ class SetTest < BaseTest
     assert_equal Memcached::END_MSG, read_reply
   end
 
-  def test_set_smaller_length
-    incorrect_length = value.length - 4
-    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, incorrect_length, false, value, false
-    assert_equal "#{Memcached::CLIENT_ERROR}<length> (#{incorrect_length}) is not equal to the length of the item's data_block (#{value.length})#{Memcached::CMD_ENDING}", read_reply 
-  
-    send_get_cmd key
-    assert_equal Memcached::END_MSG, read_reply
-  end
-
-  ##### Test set error responses
-
   def test_set_value_too_long
     too_long_value = 'v' * (Memcached::MAX_DATA_BLOCK_LENGTH + 1)
     send_storage_cmd "#{Memcached::SET_CMD_NAME}", key, flags, exptime, too_long_value.length, false, too_long_value, false
@@ -338,29 +329,13 @@ class SetTest < BaseTest
     assert_equal Memcached::END_MSG, read_reply
   end
 
-  def test_set_invalid_termination_request_line
-    socket.puts "#{Memcached::SET_CMD_NAME} #{key} #{flags} #{exptime} #{value.length}"
-    assert_equal Memcached::CMD_TERMINATION_MSG, read_reply
-
-    send_get_cmd key
-    assert_equal Memcached::END_MSG, read_reply
-  end
-
-  def test_set_invalid_termination_datablock
-    socket.puts "#{Memcached::SET_CMD_NAME} #{key} #{flags} #{exptime} #{value.length}#{Memcached::CMD_ENDING}"
-    invalid_termination = '$$'
-    socket.puts "#{value}#{invalid_termination}"
-    assert_equal Memcached::CMD_TERMINATION_MSG, read_reply
-
-    send_get_cmd key
-    assert_equal Memcached::END_MSG, read_reply
-  end
-
   def test_set_noreply_syntax_error
     wrong_syntax_no_reply = 'norep'
     socket.puts "#{Memcached::SET_CMD_NAME} #{key} #{flags} #{exptime} #{value.length} #{wrong_syntax_no_reply}" + Memcached::CMD_ENDING
     socket.puts "#{value}#{Memcached::CMD_ENDING}"
-    assert_equal "#{Memcached::CLIENT_ERROR}\"#{Memcached::NO_REPLY}\" was expected as the 6th argument, but \"#{wrong_syntax_no_reply}\" was received#{Memcached::CMD_ENDING}", read_reply
+
+    excepted_reply = no_reply_syntax_error_msg wrong_syntax_no_reply, Memcached::STORAGE_CMD_PARAMETERS_MAX_LENGTH
+    assert_equal excepted_reply, read_reply
   
     send_get_cmd key
     assert_equal Memcached::END_MSG, read_reply

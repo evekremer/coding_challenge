@@ -1,4 +1,4 @@
-require_relative '../util'
+require_relative '../mixin'
 require 'socket'
 
 module Memcached

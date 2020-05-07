@@ -1,9 +1,7 @@
 module Memcached
   class CasCommand < StorageCommand
-    CAS_PARAMETERS_MAX_LENGTH = 6
-
-    def initialize(parameters, data_block)
-      super(CAS_CMD_NAME, parameters, data_block, CAS_PARAMETERS_MAX_LENGTH)
+    def initialize parameters, data_block
+      super(CAS_CMD_NAME, parameters, data_block, CAS_CMD_PARAMETERS_MAX_LENGTH)
       
       @cas_key = parameters[4].to_s
       validate_cas!

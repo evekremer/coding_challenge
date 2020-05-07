@@ -1,9 +1,9 @@
 
 require_relative "../../test_helper"
 
-# Unit test for Memcached::Util module
-class UtilTest < BaseTest
-  include Memcached::Util
+# Unit test for Memcached::Mixin module
+class MixinTest < BaseTest
+  include Memcached::Mixin
 
   ####### Test is_expired? method
 
