@@ -1,8 +1,9 @@
 # "add": means "store this data, but only if the server *doesn't* already hold data for this key".
 # "replace" means "store this data, but only if the server *does* already hold data for this key".
 
-require_relative "../test_helper"
+require_relative "../../test_helper"
 
+# Unit test for Memcached::Server class
 class ServerAddReplaceTest < BaseTest
 
   ###########     Add     ###########
@@ -39,6 +40,15 @@ class ServerAddReplaceTest < BaseTest
     assert_equal expected_get_msg, read_reply(3)
 
     wait_for_purge_exec
+
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
+  end
+
+  def test_expired_add
+    exptime = -1
+    send_storage_cmd Memcached::ADD_CMD_NAME, key, flags, exptime, value.length, false, value, false
+    assert_equal Memcached::STORED_MSG, read_reply
 
     send_get_cmd key
     assert_equal Memcached::END_MSG, read_reply
@@ -95,6 +105,21 @@ class ServerAddReplaceTest < BaseTest
 
     wait_for_purge_exec
     
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
+  end
+
+  def test_expired_replace
+    # Set item that never expires
+    exptime = 0
+    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false
+    assert_equal Memcached::STORED_MSG, read_reply
+
+    # Replace for item that immediatelly expires
+    exptime = -1
+    send_storage_cmd Memcached::REPLACE_CMD_NAME, key, flags, exptime, value.length, false, value, false
+    assert_equal Memcached::STORED_MSG, read_reply
+
     send_get_cmd key
     assert_equal Memcached::END_MSG, read_reply
   end

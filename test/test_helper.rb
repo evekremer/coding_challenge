@@ -2,8 +2,8 @@ require_relative "../lib/memcached/mixin"
 require_relative "../lib/memcached/commands/retrieval"
 require_relative "../lib/memcached/commands/storage"
 require_relative "../lib/memcached/commands/cas"
-# require_relative "../lib/memcached/cache_handler"
-# require_relative "../lib/memcached/lru_cache"
+require_relative "../lib/memcached/cache_handler"
+require_relative "../lib/memcached/lru_cache"
 
 require "test/unit"
 require 'socket'
@@ -39,33 +39,28 @@ class BaseTest < Test::Unit::TestCase
     socket.puts "#{value}" + Memcached::CMD_ENDING
   end
 
-  def send_get_cmd(key, gets = false, length = false)
+  def send_get_cmd(key, gets = false)
     if gets
       cmd_name = Memcached::GETS_CMD_NAME
     else
       cmd_name = Memcached::GET_CMD_NAME
     end
-    @socket.puts "#{cmd_name} #{key}#{Memcached::CMD_ENDING}"
+    socket.puts "#{cmd_name} #{key}#{Memcached::CMD_ENDING}"
   end
 
-  def expected_get_response(key, flags, length, value, unique_cas_key = false, multi = false)
+  def expected_get_response(key, flags, length, value, unique_cas_key = false)
     reply = "#{Memcached::VALUE_LABEL}#{key} #{flags} #{length}"
     if unique_cas_key
       reply += " #{unique_cas_key}"
     end
     reply += Memcached::CMD_ENDING
-    reply += "#{value}"
-    reply += Memcached::CMD_ENDING
-
-    unless multi
-      reply += Memcached::END_MSG
-    end
+    reply += "#{value}#{Memcached::CMD_ENDING}"
     reply
   end
 
   # Returns cas key returned from the "gets" command of an existing key
   def get_cas_key(key)
-    @socket.puts "#{Memcached::GETS_CMD_NAME} #{key}\r\n"
+    socket.puts "#{Memcached::GETS_CMD_NAME} #{key}\r\n"
 
     reply = @socket.gets
     cas_key = reply.split[4]
@@ -84,12 +79,7 @@ class BaseTest < Test::Unit::TestCase
       cmd += " #{key}"
     end
     cmd += Memcached::CMD_ENDING
-    @socket.puts cmd
-  end
-
-  def send_multi_get_cmd(keys, gets = false)
-    send_get_multi_keys(keys, gets)
-    read_reply((keys.length() * 2) + 1)
+    socket.puts cmd
   end
   
   def read_reply num_lines = 1

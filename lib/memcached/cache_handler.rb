@@ -37,24 +37,24 @@ module Memcached
       message
     end
 
-    # Retrieves the value stored at 'keys'.
+    # Retrieves the value stored at 'keys'
     def retrieval_handler retrieval_obj
       reply = ""
       retrieval_obj.keys.each do |key|
       ################### SYNCHRO
-        if @cache.has_key?(key) # Keys that do not exists, do not appear on the response
-          item = @cache.get(key)
+      if @cache.has_key? key # Keys that do not exists, do not appear on the response
+        item = @cache.get key
 
-          unless is_expired? item[:expdate]
-            reply += VALUE_LABEL + "#{key} #{item[:flags]} #{item[:length].to_s}"
-            if retrieval_obj.command_name == GETS_CMD_NAME
-              reply += " #{item[:cas_key]}"
-            end
-            reply += CMD_ENDING
-
-            reply += "#{item[:data_block]}" + CMD_ENDING
+        unless is_expired? item[:expdate]
+          reply += "#{VALUE_LABEL}#{key} #{item[:flags]} #{item[:length].to_s}"
+          if retrieval_obj.command_name == GETS_CMD_NAME
+            reply += " #{item[:cas_key]}"
           end
+          reply += CMD_ENDING
+
+          reply += "#{item[:data_block]}#{CMD_ENDING}"
         end
+      end
       ################## SYNCHRO
       end
       reply += END_MSG
@@ -62,15 +62,15 @@ module Memcached
     end
 
     def purge_expired_keys
+      puts "Purging expired keys ........"
       ####################### SYNCHRO
-          puts "Purging expired keys ........"
-          @cache.cache.each do |key, value|
-            if is_expired? value[:expdate]
-              @cache.remove_item_from_cache key
-            end
-          end
-      ####################### SYNCHRO
+      @cache.cache.each do |key, value|
+        if is_expired? value[:expdate]
+          @cache.remove_item_from_cache key
+        end
       end
+      ####################### SYNCHRO
+    end
 
     private
 
@@ -121,7 +121,6 @@ module Memcached
       ####################### SYNCHRO
       message
     end
-
 
     # Cas: set the data if it is not updated since last fetch
     def cas(storage_obj)

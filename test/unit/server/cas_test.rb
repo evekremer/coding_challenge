@@ -1,6 +1,7 @@
 #"cas" is a check and set operation which means "store this data but only if no one else has updated since I last fetched it."
-require_relative "../test_helper"
+require_relative "../../test_helper"
 
+# Unit test for Memcached::Server class
 class ServerCasTest < BaseTest
   include Memcached::Mixin
   def test_simple_cas
@@ -115,6 +116,23 @@ class ServerCasTest < BaseTest
 
     wait_for_purge_exec
     
+    # Get expired item
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
+  end
+
+  def test_expired_cas
+    # Set item that never expires
+    exptime = 0
+    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false
+    assert_equal Memcached::STORED_MSG, read_reply
+
+    # Cas expired item
+    cas_key = get_cas_key key
+    exptime = -1
+    send_storage_cmd Memcached::CAS_CMD_NAME, key, flags, exptime, new_value.length, cas_key, new_value, false
+    assert_equal Memcached::STORED_MSG, read_reply
+
     # Get expired item
     send_get_cmd key
     assert_equal Memcached::END_MSG, read_reply

@@ -1,5 +1,5 @@
 
-require_relative "../../test_helper"
+require_relative "../test_helper"
 
 # Unit test for Memcached::Mixin module for validate_*! methods
 class MixinValidateTest < BaseTest

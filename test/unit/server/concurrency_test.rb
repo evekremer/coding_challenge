@@ -1,5 +1,6 @@
-require_relative "../test_helper"
+require_relative "../../test_helper"
 
+# Unit test for Memcached::Server class
 class ServerConcurrencyTest < BaseTest
   def test_multiple_threads_set_get
     Array.new(10) do |n|

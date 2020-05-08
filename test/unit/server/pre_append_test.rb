@@ -1,8 +1,9 @@
 # "prepend": means "add this data to an existing key before existing data".
 # "append": means "add this data to an existing key after existing data".
 
-require_relative "../test_helper"
+require_relative "../../test_helper"
 
+# Unit test for Memcached::Server class
 class ServerPreAppendTest < BaseTest
   ###########     Append     ###########
   include Memcached::Mixin

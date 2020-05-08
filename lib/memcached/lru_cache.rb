@@ -16,6 +16,10 @@ module Memcached
       @cache.has_key?(key.to_sym)
     end
 
+    def empty?
+      @cache.empty?
+    end
+
     def get(key)
       @cache[key.to_sym]
       #update_most_recently_used(key)
@@ -77,6 +81,13 @@ module Memcached
       @total_length_stored -= length(key)
       @cache.delete(key.to_sym)
     end
+
+    # def remove_all
+    #   @total_length_stored = 0
+    #   @cache.each do |key, value|
+    #     @cache.delete(key.to_sym)
+    #   end
+    # end
 
     private
 

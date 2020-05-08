@@ -1,6 +1,7 @@
 
-require_relative "../test_helper"
+require_relative "../../test_helper"
 
+# Unit test for Memcached::Server class
 class ServerSetTest < BaseTest
 
   include Memcached::Mixin
@@ -144,19 +145,6 @@ class ServerSetTest < BaseTest
     assert_equal Memcached::END_MSG, read_reply
   end
 
-  def test_set_key_starts_with_newline
-    key = "\nkey"
-    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false
-    
-    # Server reads until the first ocurrance of \n
-    #=> takes "<Memcached::SET_CMD_NAME> \n" as the command request line
-    assert_equal Memcached::CMD_TERMINATION_MSG, read_reply
-
-    send_get_cmd key
-    #=> takes "<Memcached::GET_CMD_NAME> \n" as the command request line
-    assert_equal Memcached::CMD_TERMINATION_MSG, read_reply
-  end
-
   def test_set_key_starts_with_request_termination
     key = "\r\nkey"
     send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false
@@ -168,19 +156,6 @@ class ServerSetTest < BaseTest
     send_get_cmd key
     #=> takes "<Memcached::GET_CMD_NAME> \r\n" as the command request line
     assert_equal Memcached::TOO_FEW_ARGUMENTS_MSG, read_reply
-  end
-
-  def test_set_key_control_chars_newline
-    key = "memcached\nkey\n"
-    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false
-    
-    # Server reads until the first ocurrance of \n
-    #=> takes "<Memcached::SET_CMD_NAME> memcached\n" as the command request line
-    assert_equal Memcached::CMD_TERMINATION_MSG, read_reply
-
-    send_get_cmd key
-    #=> takes "<Memcached::GET_CMD_NAME> memcached\n" as the command request line
-    assert_equal Memcached::CMD_TERMINATION_MSG, read_reply
   end
 
   def test_set_key_control_chars_termination
@@ -246,15 +221,6 @@ class ServerSetTest < BaseTest
 
   # #=> Exptime
 
-  def test_set_string_exptime
-    exptime_without_digits = 'test_exptime'
-    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime_without_digits, value.length, false, value, false
-    assert_equal Memcached::EXPTIME_TYPE_MSG, read_reply
-
-    send_get_cmd key
-    assert_equal Memcached::END_MSG, read_reply
-  end
-
   def test_set_string_exptime_with_digits
     exptime_with_digits = 'test_exptime_1234'
     send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime_with_digits, value.length, false, value, false
@@ -268,6 +234,30 @@ class ServerSetTest < BaseTest
     empty_exptime = ''
     send_storage_cmd Memcached::SET_CMD_NAME, key, flags, empty_exptime, value.length, false, value, false
     assert_equal Memcached::EXPTIME_TYPE_MSG, read_reply
+
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
+  end
+
+  def test_exptime_set
+    exptime = 3
+    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false
+    assert_equal Memcached::STORED_MSG, read_reply
+
+    send_get_cmd key
+    expected_get_msg = expected_get_response key, flags, value.length, value
+    assert_equal expected_get_msg, read_reply(3)
+
+    wait_for_purge_exec
+
+    send_get_cmd key
+    assert_equal Memcached::END_MSG, read_reply
+  end
+
+  def test_set_expired
+    exptime = -1
+    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false
+    assert_equal Memcached::STORED_MSG, read_reply
 
     send_get_cmd key
     assert_equal Memcached::END_MSG, read_reply
