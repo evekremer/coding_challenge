@@ -13,7 +13,7 @@ class ServerGetGetsTest < BaseTest
     10.times{ |i|
       key = "#{key}#{i}"
       send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, true
-      expected_reply += expected_get_response key, flags, value.length, value
+      expected_reply += expected_get_response key, flags, value.length, value, false, true
       keys[i] = key
     }
     expected_reply += Memcached::END_MSG
@@ -44,7 +44,7 @@ class ServerGetGetsTest < BaseTest
     10.times{ |i|
       key = "#{key}#{i}"
       send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, true
-      expected_reply += expected_get_response key, flags, value.length, value
+      expected_reply += expected_get_response key, flags, value.length, value, false, true
       keys[i] = key
     }
     expected_reply += Memcached::END_MSG
@@ -61,10 +61,8 @@ class ServerGetGetsTest < BaseTest
     send_storage_cmd Memcached::SET_CMD_NAME, "#{key}3", flags + 1, exptime, value.length, false, value
     read_reply
 
-    exp_reply_multi = ""
-    exp_reply_multi += expected_get_response "#{key}1", flags, value.length, value
-    exp_reply_multi += expected_get_response "#{key}3", flags + 1, value.length, value
-    exp_reply_multi += Memcached::END_MSG
+    exp_reply_multi = expected_get_response "#{key}1", flags, value.length, value, false, true
+    exp_reply_multi += expected_get_response "#{key}3", flags + 1, value.length, value, false
 
     keys = ["#{key}1", "#{key}2", "#{key}3", "#{key}4", "#{key}5"]
     send_get_multi_keys keys
@@ -95,7 +93,7 @@ class ServerGetGetsTest < BaseTest
     10.times{ |i|
       key = "#{key}#{i}"
       send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, true
-      expected_reply += expected_get_response key, flags, value.length, value, get_cas_key(key)
+      expected_reply += expected_get_response key, flags, value.length, value, get_cas_key(key), true
       keys[i] = key
     }
     expected_reply += Memcached::END_MSG
@@ -126,7 +124,7 @@ class ServerGetGetsTest < BaseTest
     10.times{ |i|
       key = "#{key}#{i}"
       send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, true
-      expected_reply += expected_get_response key, flags, value.length, value, get_cas_key(key)
+      expected_reply += expected_get_response key, flags, value.length, value, get_cas_key(key), true
       keys[i] = key
     }
     expected_reply += Memcached::END_MSG
@@ -143,10 +141,8 @@ class ServerGetGetsTest < BaseTest
     send_storage_cmd Memcached::SET_CMD_NAME, "#{key}3", flags + 1, exptime, value.length, false, value
     read_reply
 
-    exp_reply_multi = ""
-    exp_reply_multi += expected_get_response "#{key}1", flags, value.length, value, get_cas_key("#{key}1")
+    exp_reply_multi = expected_get_response "#{key}1", flags, value.length, value, get_cas_key("#{key}1"), true
     exp_reply_multi += expected_get_response "#{key}3", flags + 1, value.length, value, get_cas_key("#{key}3")
-    exp_reply_multi += Memcached::END_MSG
 
     keys = ["#{key}1", "#{key}2", "#{key}3", "#{key}4", "#{key}5"]
     send_get_multi_keys keys, true

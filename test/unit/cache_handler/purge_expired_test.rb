@@ -8,25 +8,20 @@ class PurgeExpiredTest < BaseTest
 
   def test_simple_purge_expired
     expdate = Time.now
-    @cache_handler.cache.store(key, flags, expdate, data_block.length, @cache_handler.global_cas_key, data_block)
+    @cache_handler.cache.store(key, flags, expdate, data_block.length, @cache_handler.get_update_cas_key, data_block)
 
     assert @cache_handler.cache.has_key? key
 
     @cache_handler.purge_expired_keys
 
-    # Delete expired item
     refute @cache_handler.cache.has_key? key
   end
 
   def test_simple_purge_not_expired
-    expdate = Time.now + 1000
-    @cache_handler.cache.store(key, flags, expdate, data_block.length, @cache_handler.global_cas_key, data_block)
+    @cache_handler.cache.store(key, flags, expdate, data_block.length, @cache_handler.get_update_cas_key, data_block)
 
     assert @cache_handler.cache.has_key? key
-
     @cache_handler.purge_expired_keys
-
-    # Keep not expired item
     assert @cache_handler.cache.has_key? key
   end
   
@@ -40,7 +35,7 @@ class PurgeExpiredTest < BaseTest
     expdate = Time.now + (30 * Memcached::SECONDS_PER_DAY)
 
     8.times{ |i|
-      @cache_handler.cache.store("#{key}#{i}", flags, expdate, data_block.length, @cache_handler.global_cas_key, data_block)
+      @cache_handler.cache.store("#{key}#{i}", flags, expdate, data_block.length, @cache_handler.get_update_cas_key, data_block)
     }
 
     @cache_handler.purge_expired_keys
@@ -57,7 +52,7 @@ class PurgeExpiredTest < BaseTest
     expdate = Time.new(2000, 1, 1)
 
     8.times{ |i|
-      @cache_handler.cache.store("#{key}#{i}", flags, expdate, data_block.length, @cache_handler.global_cas_key, data_block)
+      @cache_handler.cache.store("#{key}#{i}", flags, expdate, data_block.length, @cache_handler.get_update_cas_key, data_block)
     }
 
     @cache_handler.purge_expired_keys
@@ -70,9 +65,9 @@ class PurgeExpiredTest < BaseTest
 
     20.times{ |i|
       if i < 10
-        @cache_handler.cache.store("#{key}#{i}", flags, expdate_expired, data_block.length, @cache_handler.global_cas_key, data_block)
+        @cache_handler.cache.store("#{key}#{i}", flags, expdate_expired, data_block.length, @cache_handler.get_update_cas_key, data_block)
       else
-        @cache_handler.cache.store("#{key}#{i}", flags, expdate_not_expired, data_block.length, @cache_handler.global_cas_key, data_block)
+        @cache_handler.cache.store("#{key}#{i}", flags, expdate_not_expired, data_block.length, @cache_handler.get_update_cas_key, data_block)
       end
     }
 

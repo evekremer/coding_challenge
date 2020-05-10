@@ -47,11 +47,17 @@ Optional _<socket_address>_ and _<socket_port>_ arguments determine the address 
 
 ### Tests
 
-In order to run the tests, the server must be running and then invoke:
+In order to run the tests, invoke:
 
-`$ ruby ./test/ts_unit_tests.rb`
+- `$ ruby ./test/ts_unit_tests.rb`
 
-which runs all the unit tests defined under `/test/unit` folder.
+which runs all the unit tests defined under `/test/unit` directory, excluding the server tests.
+
+And with the server running, invoke:
+
+- `$ ruby ./test/ts_server_unit_tests.rb`
+
+which runs all the unit tests defined under `/test/unit/server` directory.
 
 ## Resources
 

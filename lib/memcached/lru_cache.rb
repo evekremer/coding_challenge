@@ -74,7 +74,6 @@ module Memcached
       
       @total_length_stored += added_length
       update_most_recently_used(key)
-      STORED_MSG
     end
 
     def remove_item_from_cache(key)

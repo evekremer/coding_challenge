@@ -48,13 +48,18 @@ class BaseTest < Test::Unit::TestCase
     socket.puts "#{cmd_name} #{key}#{Memcached::CMD_ENDING}"
   end
 
-  def expected_get_response(key, flags, length, value, unique_cas_key = false)
+  def expected_get_response(key, flags, length, value, unique_cas_key = false, multi = false)
     reply = "#{Memcached::VALUE_LABEL}#{key} #{flags} #{length}"
     if unique_cas_key
       reply += " #{unique_cas_key}"
     end
     reply += Memcached::CMD_ENDING
     reply += "#{value}#{Memcached::CMD_ENDING}"
+    
+    unless multi
+      reply += Memcached::END_MSG
+    end
+    
     reply
   end
 
@@ -107,6 +112,10 @@ class BaseTest < Test::Unit::TestCase
 
   def exptime
     rand(200..500)
+  end
+
+  def expdate
+    Time.now + rand(200..500)
   end
 
   def cas_key

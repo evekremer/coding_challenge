@@ -64,7 +64,6 @@ class ServerPreAppendTest < BaseTest
     send_storage_cmd Memcached::PREPEND_CMD_NAME, key, flags, exptime, v1.length, false, v1, false
     assert_equal Memcached::STORED_MSG, read_reply
     
-    # Get the item and assert reply
     send_get_cmd key
     expected_msg = expected_get_response key, flags, (v1 + v2).length, v1 + v2
     assert_equal expected_msg, read_reply(3)
@@ -99,7 +98,6 @@ class ServerPreAppendTest < BaseTest
     new_flags = flags + 4
     send_storage_cmd Memcached::PREPEND_CMD_NAME, key, new_flags, exptime, new_value.length, false, new_value, true
 
-    # Get the item and assert reply
     send_get_cmd key
     expected_msg = expected_get_response key, flags, (new_value + value).length, new_value + value # flags ignored for prepend commands
     assert_equal expected_msg, read_reply(3)
