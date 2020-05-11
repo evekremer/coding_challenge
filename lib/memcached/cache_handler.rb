@@ -2,17 +2,11 @@ module Memcached
   class CacheHandler
     include Mixin
 
+    attr_reader :cache, :cas_key
+
     def initialize max_cache_capacity = MAX_CACHE_CAPACITY
       @cas_key = 0
       @cache = LRUCache.new max_cache_capacity
-    end
-
-    def cache
-      @cache
-    end
-
-    def cas_key
-      @cas_key
     end
 
     def get_update_cas_key
@@ -46,44 +40,40 @@ module Memcached
     def retrieval_handler retrieval_obj
       reply = ""
       retrieval_obj.keys.each do |key|
-      ################### SYNCHRO
+      ################### SYNCHRO LECTOR
       if @cache.has_key? key # Keys that do not exists, do not appear on the response
-        item = @cache.get key
-
-        unless is_expired? item[:expdate]
-          reply += "#{VALUE_LABEL}#{key} #{item[:flags]} #{item[:length]}"
+        
+        unless is_expired? @cache.expdate key
+          reply += "#{VALUE_LABEL}#{key} #{@cache.flags key} #{@cache.length key}"
           if retrieval_obj.command_name == GETS_CMD_NAME
-            reply += " #{item[:cas_key]}"
+            reply += " #{@cache.cas_key key}"
           end
           reply += CMD_ENDING
 
-          reply += "#{item[:data_block]}#{CMD_ENDING}"
+          reply += "#{@cache.data_block key}#{CMD_ENDING}"
         end
+        
       end
-      ################## SYNCHRO
+      ################## SYNCHRO LECTOR
       end
       reply += END_MSG
       reply
     end
 
     def purge_expired_keys
-      puts "Purging expired keys ........"
-      ####################### SYNCHRO
-      @cache.cache.each do |key, value|
-        if is_expired? value[:expdate]
-          @cache.remove_item_from_cache key
-        end
-      end
-      ####################### SYNCHRO
+      ####################### SYNCHRO ESCRITOR
+      @cache.purge_expired_keys
+      ####################### SYNCHRO ESCRITOR
     end
 
     private
 
-    # [Add / Replace]: store data only if the server [does not / does] already hold data for key
+    # [Add / Replace]:
+    # Store data only if the server [does not / does] already hold data for key
     def add_replace(storage_obj)
       key = storage_obj.key
 
-      ####################### SYNCHRO
+      ####################### SYNCHRO ESCRITOR
       cache_has_key = @cache.has_key? key
 
       if (!cache_has_key && storage_obj.command_name == ADD_CMD_NAME) || (cache_has_key && storage_obj.command_name == REPLACE_CMD_NAME)
@@ -92,15 +82,16 @@ module Memcached
       else
         message = NOT_STORED_MSG
       end
-      ####################### SYNCHRO
+      ####################### SYNCHRO ESCRITOR
       message
     end
 
-    # [Prepend / Append]: adds 'data_block' to an existing key [before / after] existing data_block
+    # [Prepend / Append]:
+    #  Adds 'data_block' to an existing key [before / after] existing data_block
     def pre_append storage_obj
       key = storage_obj.key
 
-      ####################### SYNCHRO
+      ####################### SYNCHRO ESCRITOR
       if @cache.has_key? key # the key exists in cache
 
         previous_data_block = String.new @cache.data_block key
@@ -123,15 +114,16 @@ module Memcached
       else
         message = NOT_STORED_MSG
       end
-      ####################### SYNCHRO
+      ####################### SYNCHRO ESCRITOR
       message
     end
 
-    # Cas: set the data if it is not updated since last fetch
+    # Cas
+    # Set data only if it is not updated since last fetch
     def cas storage_obj
       key = storage_obj.key
 
-      ####################### SYNCHRO
+      ####################### SYNCHRO ESCRITOR
       if @cache.has_key? key
         if @cache.cas_key(key).to_i != storage_obj.cas_key.to_i
           message = EXISTS_MSG # The item has been modified since last fetch
@@ -142,7 +134,7 @@ module Memcached
       else
         message = NOT_FOUND_MSG
       end
-      ####################### SYNCHRO
+      ####################### SYNCHRO ESCRITOR
       message
     end
 

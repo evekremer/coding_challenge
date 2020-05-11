@@ -1,14 +1,13 @@
 require_relative "../../test_helper"
 
 # Test that inserts with full cache cause older data to be purged in least recently used (LRU) order
-class LRUTest < BaseTest
+class ServerLruTest < BaseTest
   def setup
     # Reach maximum capacity
     # The last item causes the first inserted item to be purged
     @v = 'v' * Memcached::MAX_DATA_BLOCK_LENGTH
     65.times{ |n|
-        send_storage_cmd Memcached::SET_CMD_NAME, "key#{n}", flags, exptime, @v.length, false, @v, false
-        read_reply
+      send_storage_cmd Memcached::SET_CMD_NAME, "key#{n}", flags, exptime, @v.length, false, @v, true
     }
     @v2 = 'v' * (Memcached::MAX_DATA_BLOCK_LENGTH - 4)
     @v3 = 'v' * 4

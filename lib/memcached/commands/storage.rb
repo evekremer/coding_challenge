@@ -2,6 +2,8 @@ module Memcached
   class StorageCommand
     include Mixin
 
+    attr_reader :key, :flags, :expdate, :length, :data_block, :no_reply, :command_name, :parameters_max_length
+
     def initialize command_name, parameters, data_block, parameters_max_length = STORAGE_CMD_PARAMETERS_MAX_LENGTH
       @command_name = command_name.to_s
       raise ArgumentError unless STORAGE_CMDS.include? command_name
@@ -16,38 +18,6 @@ module Memcached
       
       @expdate = expiration_date exptime
       @no_reply = has_no_reply? parameters
-    end
-
-    def key
-      @key
-    end
-
-    def flags
-      @flags
-    end
-
-    def expdate
-      @expdate
-    end
-
-    def length
-      @length
-    end
-
-    def data_block
-      @data_block
-    end
-
-    def no_reply
-      @no_reply
-    end
-
-    def command_name
-      @command_name
-    end
-
-    def parameters_max_length
-      @parameters_max_length
     end
 
     private

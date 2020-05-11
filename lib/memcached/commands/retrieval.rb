@@ -3,19 +3,13 @@ module Memcached
     include Mixin
     PARAMETERS_MIN_LENGTH_RETRIEVAL = 1
     
+    attr_reader :keys, :command_name
+
     def initialize command_name, keys
       @command_name = command_name.to_s
       @keys = keys
 
       validate!
-    end
-
-    def keys
-      @keys
-    end
-
-    def command_name
-      @command_name
     end
 
     private

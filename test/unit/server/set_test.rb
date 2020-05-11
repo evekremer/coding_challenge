@@ -321,7 +321,7 @@ class ServerSetTest < BaseTest
 
   def test_set_noreply_syntax_error
     wrong_syntax_no_reply = 'norep'
-    socket.puts "#{Memcached::SET_CMD_NAME} #{key} #{flags} #{exptime} #{value.length} #{wrong_syntax_no_reply}" + Memcached::CMD_ENDING
+    socket.puts "#{Memcached::SET_CMD_NAME} #{key} #{flags} #{exptime} #{value.length} #{wrong_syntax_no_reply}#{Memcached::CMD_ENDING}"
     socket.puts "#{value}#{Memcached::CMD_ENDING}"
 
     excepted_reply = no_reply_syntax_error_msg wrong_syntax_no_reply, Memcached::STORAGE_CMD_PARAMETERS_MAX_LENGTH
