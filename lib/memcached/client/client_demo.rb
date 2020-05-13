@@ -5,333 +5,331 @@ module Memcached
   class ClientDemo
     def initialize(socket)
       @socket = socket
+
+      # Storage commands parameters
+      @storage_cmd_name = Memcached::SET_CMD_NAME
+      @key = 'key1'
+      @flags = 1
+      @exptime = 1000000
+      @data_block = 'memcached'
+      @cas_key = false
+      @no_reply = false
+
+      # Retrieval commands parameters
+      @retrieval_cmd_name = Memcached::GET_CMD_NAME
+      @keys = [@key]
+
       establish_connection
+    end
+
+    def print_title title
+      puts "-" * 60
+      puts "\n     #{title}\n\n"
+      puts "-" * 60
+      puts "\n"
+    end
+
+    def retrieval_request_handler num_lines = 1
+      keys = ''
+      @keys.each { |key| keys += " #{key}" }
+      request_line = "#{@retrieval_cmd_name}#{keys}#{Memcached::CMD_ENDING}"
+
+      puts ">> #{request_line}"
+      @socket.puts request_line
+      print_reply num_lines
+    end
+
+    def request_line length = false
+      length = @data_block.length unless length
+      request = "#{@storage_cmd_name} #{@key} #{@flags} #{@exptime} #{length}"
+      request += " #{@cas_key}" if @cas_key
+      request += " #{@no_reply}" if @no_reply
+      request += "#{Memcached::CMD_ENDING}"
+    end
+
+    def storage_request_handler length = false
+      command = request_line length
+      print_command command
+      send_command command
+    end
+
+    def print_command command
+      puts ">> #{command}"
+      puts ">> #{@data_block}#{Memcached::CMD_ENDING}"
+    end
+
+    def send_command command
+      @socket.puts command
+      @socket.puts "#{@data_block}#{Memcached::CMD_ENDING}"
+      print_reply
+    end
+
+    def print_reply num_lines = 1
+      num_lines.times{ puts "#{@socket.gets}" }    # Print server response
+      puts "\n"
+    end
+
+    def print_comment comment
+      puts "####     #{comment}\n\n"
     end
 
     def establish_connection
       begin
-        dashed_line
-        puts "\n     Simple set and get commands\n\n"
-        dashed_line
+        print_title 'Simple set and get commands'
 
-        puts ">> set key1 1 1000000 9\r\n"
-        puts ">> memcached\r\n"
-        @socket.puts "set key1 1 1000000 9\r\n"
-        @socket.puts "memcached\r\n"
-        puts "#{@socket.gets}\n"
-          #=> STORED
-
-        puts ">> get key1\r\n"
-        @socket.puts "get key1\r\n"
-        3.times {puts "#{@socket.gets}"}
-          #=> {"key1" => "memcached"}
-        puts "\n"
-
-        puts ">> set key2 3 3000 4\r\n"
-        puts ">> demo\r\n"
-        @socket.puts "set key2 3 3000 4\r\n"
-        @socket.puts "demo\r\n"
-        puts "#{@socket.gets}\n"
-          #=> STORED
-
-        puts ">> get key2\r\n"
-        @socket.puts "get key2\r\n"
-        3.times {puts "#{@socket.gets}"}
-          #=> {"key2" => "demo"}
-        puts "\n"
-
-        dashed_line
-        puts "\n     Set with empty data_block\n\n"
-        dashed_line
+        storage_request_handler #=> STORED
+        retrieval_request_handler 3 #=> {"key1" => "memcached"}
         
-        puts ">> set key5 3 1000 0\r\n"
-        puts ">> \r\n"
-        @socket.puts "set key5 3 1000 0\r\n"
-        @socket.puts "\r\n"
-        puts "#{@socket.gets}\n"
-          #=> STORED
-        
-        puts ">> get key5\r\n"
-        @socket.puts "get key5\r\n"
-        3.times {puts "#{@socket.gets}"}
-          #=> { "key5" => ""}
-        puts "\n"
-        
-        dashed_line
-        puts "\n     Set and get expired item\n\n"
-        dashed_line
+        @key = 'key2'
+        @flags = 3
+        @exptime = 3000
+        @data_block = 'demo'
+        storage_request_handler #=> STORED
 
-        # Item immediatelly expired
-        puts ">> set key_imm_expired 0 -1 5\r\n"
-        puts ">> value\r\n"
-        @socket.puts "set key_imm_expired 0 -1 5\r\n"
-        @socket.puts "value\r\n"
-        puts "#{@socket.gets}\n"
-          #=> STORED
+        @keys = [@key]
+        retrieval_request_handler 3 #=> {"key2" => "demo"}
 
-        puts ">> get key_imm_expired\r\n"
-        @socket.puts "get key_imm_expired\r\n"
-        puts "#{@socket.gets}\n"
+        print_title 'Set with empty data_block'
+        
+        @key = 'key5'
+        @flags = 3
+        @exptime = 1000
+        @data_block = ''
+        storage_request_handler #=> STORED
+
+        @keys = [@key]
+        retrieval_request_handler 3 #=> { "key5" => ""}
+        
+        print_title 'Set and get expired item'
+
+        @key = 'key_imm_expired'
+        @keys = [@key]
+        @flags = 4
+        @exptime = -1
+        @data_block = 'value immediatelly expired'
+        storage_request_handler #=> STORED
+
+        retrieval_request_handler
           #=> END (expired but not yet removed from cache)
 
-        puts ">> set key_exptime 0 2 5\r\n"
-        puts ">> value\r\n"
-        @socket.puts "set key_exptime 0 2 5\r\n"
-        @socket.puts "value\r\n"
-        puts "#{@socket.gets}\n"
-          #=> STORED
-        
-        puts ">> Sleeps for #{PURGE_EXPIRED_KEYS_FREQUENCY_SECS+5} seconds...\n\n"
-        sleep(PURGE_EXPIRED_KEYS_FREQUENCY_SECS+5)
+        @key = 'key_exptime_demo'
+        @keys = [@key]
+        @flags = 8
+        @exptime = 3
+        @data_block = 'value exptime demo'
+        storage_request_handler #=> STORED
 
-        puts ">> get key_exptime\r\n"
-        @socket.puts "get key_exptime\r\n"
-        puts "#{@socket.gets}\n"
-          #=> END (key_exptime item was deleted from the cache)
+        puts ">> Sleeps #{PURGE_EXPIRED_KEYS_FREQUENCY_SECS + 5} seconds...\n\n"
+        sleep PURGE_EXPIRED_KEYS_FREQUENCY_SECS + 5
 
-        dashed_line
-        puts "\n     Simple add and replace, then get multiple keys\n\n"
-        dashed_line
+        retrieval_request_handler #=> END (purged from the cache)
 
-        puts ">> replace key1 4 75000 30\r\n"
-        puts ">> this is the new value for key1\r\n"
-        @socket.puts "replace key1 4 75000 30\r\n"
-        @socket.puts "this is the new value for key1\r\n"
-        puts "#{@socket.gets}\n"
-          #=> STORED
+        print_title 'Simple add and replace, then get multiple keys'
 
-        puts ">> add key3 0 8020 4\r\n"
-        puts ">> ruby\r\n"
-        @socket.puts "add key3 0 8020 4\r\n"
-        @socket.puts "ruby\r\n"
-        puts "#{@socket.gets}\n"
-          #=> STORED
+        @storage_cmd_name = Memcached::REPLACE_CMD_NAME
+        @key = 'key1'
+        @flags = 4
+        @exptime = 75000
+        @data_block = 'this is the new value for key1'
+        storage_request_handler #=> STORED
 
-        puts ">> get key1 key3\r\n"
-        @socket.puts "get key1 key3\r\n"
-        5.times {puts "#{@socket.gets}"}
+        @storage_cmd_name = Memcached::ADD_CMD_NAME
+        @key = 'key3'
+        @flags = 0
+        @exptime = 8020
+        @data_block = 'ruby'
+        storage_request_handler #=> STORED
+
+        @keys = ['key1', 'key3']
+        retrieval_request_handler 5
           #=> {"key1" => "this is the new value for key1", 
           #    "key3" => "ruby"}
-        puts "\n"
 
-        puts ">> replace key4 0 2 55\r\n"
-        puts ">> Lorem ipsum dolor sit amet, consectetur adipiscing elit\r\n"
-        @socket.puts "replace key4 0 2 55\r\n"
-        @socket.puts "Lorem ipsum dolor sit amet, consectetur adipiscing elit\r\n"
-        puts "#{@socket.gets}\n"
-          #=> NOT_STORED
+        @storage_cmd_name = Memcached::REPLACE_CMD_NAME
+        @key = 'key4'
+        @exptime = 2
+        @data_block = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit'
+        storage_request_handler #=> NOT_STORED
 
-        puts ">> add key3 8 12 5\r\n"
-        puts ">> value\r\n"
-        @socket.puts "add key3 8 12 5\r\n"
-        @socket.puts "value\r\n"
-        puts "#{@socket.gets}\n"
-          #=> NOT_STORED
+        @storage_cmd_name = Memcached::ADD_CMD_NAME
+        @key = 'key3'
+        @flags = 8
+        @exptime = 12
+        @data_block = 'value'
+        storage_request_handler #=> NOT_STORED
 
-        puts ">> get key3 key4\r\n"
-        @socket.puts "get key3 key4\r\n"
-        3.times {puts "#{@socket.gets}"}
-          #=> {"key3" => "ruby"}
+        @keys = ['key3', 'key4']
+        retrieval_request_handler 3 #=> {"key3" => "ruby"}
         
-        dashed_line
-        puts "\n     Append and prepend to missing and existing keys\n\n"
-        dashed_line
+        print_title 'Append and prepend to missing and existing keys'
 
-        puts ">> append missing_key 0 222000 8\r\n"
-        puts ">> abcd1234\r\n"
-        @socket.puts "append missing_key 0 222000 8\r\n"
-        @socket.puts "abcd1234\r\n"
-        puts "#{@socket.gets}\n"
-          #=> NOT_STORED
+        @storage_cmd_name = Memcached::APPEND_CMD_NAME
+        @key = 'missing_key'
+        @flags = 3
+        @exptime = 222000
+        @data_block = 'abcd1234'
+        storage_request_handler #=> NOT_STORED
 
-        puts ">> append key3 0 222000 9\r\n"
-        puts ">>  on rails\r\n"
-        @socket.puts "append key3 0 222000 9\r\n"
-        @socket.puts " on rails\r\n"
-        puts "#{@socket.gets}\n"
-          #=> STORED
+        @key = 'key3'
+        @data_block = ' on rails'
+        storage_request_handler #=> STORED
 
-        puts ">> prepend key5 330 222000 #{"data_block_key5".length}\r\n"
-        puts ">> data_block_key5\r\n"
-        @socket.puts "prepend key5 330 222000 #{"data_block_key5".length}\r\n"
-        @socket.puts "data_block_key5\r\n"
-        puts "#{@socket.gets}\n"
-          #=> STORED
+        @storage_cmd_name = Memcached::PREPEND_CMD_NAME
+        @key = 'key5'
+        @flags = 330
+        @data_block = 'data_block_key5'
+        storage_request_handler #=> STORED
 
-        puts ">> get missing_key key3 key5\r\n"
-        @socket.puts "get missing_key key3 key5\r\n"
-        5.times {puts "#{@socket.gets}"}
+        @keys = ['missing_key', 'key3', 'key5']
+        retrieval_request_handler 5
           #=> { "key3" => "ruby on rails", 
           #       key5" => "data_block_key5"}
-        puts "\n"
         
-        dashed_line
-        puts "\n     CAS command\n\n"
-        dashed_line
+        print_title 'CAS command'
         
-        puts ">> cas key6 0 199000 9 1\r\n"
-        puts ">> memcached\r\n"
-        @socket.puts "cas key6 0 199000 9 1\r\n"
-        @socket.puts "memcached\r\n"
-        puts "#{@socket.gets}\n"
-          #=> NOT_FOUND
+        @storage_cmd_name = Memcached::CAS_CMD_NAME
+        @key = 'key6'
+        @flags = 0
+        @exptime = 199000
+        @data_block = 'memcached'
+        @cas_key = 1
+        storage_request_handler #=> NOT_FOUND
 
-        puts ">> set key6 0 199000 9\r\n"
-        puts ">> memcached\r\n"
-        @socket.puts "set key6 0 199000 9\r\n"
-        @socket.puts "memcached\r\n"
-        puts "#{@socket.gets}\n"
-          #=> STORED
+        @storage_cmd_name = Memcached::SET_CMD_NAME
+        @cas_key = false
+        storage_request_handler #=> STORED
 
-        puts ">> gets key6\r\n"
-        @socket.puts "gets key6\r\n"
-        3.times {puts "#{@socket.gets}"}
-          #=> { "key6" => "memcached", caskey: 10}
-        puts "\n"
-        cas_key_ini = 10
+        @retrieval_cmd_name = Memcached::GETS_CMD_NAME
+        @keys = [@key]
+        retrieval_request_handler 3
+         #=> { "key6" => "memcached", caskey: 10}
         
+        @storage_cmd_name = Memcached::SET_CMD_NAME
+        @flags = 6
+        @exptime = 80000
+        @data_block = 'memcached_2.0'
+        @cas_key = false
+        storage_request_handler
+         #=> STORED and unique_cas_key is updated (with value 11)
 
-        puts ">> set key6 6 80000 13\r\n"
-        puts ">> memcached_2.0\r\n"
-        @socket.puts "set key6 6 80000 13\r\n"
-        @socket.puts "memcached_2.0\r\n"
-        puts "#{@socket.gets}\n"
-          #=> STORED and unique_cas_key is updated (with value 11)
+        @storage_cmd_name = Memcached::CAS_CMD_NAME
+        @flags = 0
+        @exptime = 199000
+        @data_block = 'memcached_2.1'
+        @cas_key = 10
+        storage_request_handler
+         #=> EXISTS - the item has been modified since last fetch
 
-        puts ">> cas key6 0 199000 13 #{cas_key_ini}\r\n"
-        puts ">> memcached_2.1\r\n"
-        @socket.puts "cas key6 0 199000 13 #{cas_key_ini}\r\n"
-        @socket.puts "memcached_2.1\r\n"
-        puts "#{@socket.gets}\n"
-          #=> EXISTS - the item has been modified since last fetch
+        retrieval_request_handler 3
+         #=> { "key6" => "memcached_2.0", caskey: 11}
 
-        puts ">> gets key6\r\n"
-        @socket.puts "gets key6\r\n"
-        3.times {puts "#{@socket.gets}"}
-          #=> { "key6" => "memcached_2.0", caskey: 11}
-        puts "\n"
-        cas_key_new = cas_key_ini + 1
+        @cas_key += 1
+        storage_request_handler #=> STORED
 
-        puts ">> cas key6 0 199000 13 #{cas_key_new}\r\n"
-        puts ">> memcached_2.1\r\n"
-        @socket.puts "cas key6 0 199000 13 #{cas_key_new}\r\n"
-        @socket.puts "memcached_2.1\r\n"
-        puts "#{@socket.gets}\n"
-          #=> STORED
+        retrieval_request_handler 3
+         #=> {"key6" => "memcached_2.1", caskey: 12}
 
-        puts ">> gets key6\r\n"
-        @socket.puts "gets key6\r\n"
-        3.times {puts "#{@socket.gets}"}
-          #=> {"key6" => "memcached_2.1", caskey: 12}
-        puts "\n"
+        print_title 'Invalid commands - error responses'
 
-        dashed_line
-        puts "\n     Invalid commands - error responses\n\n"
-        dashed_line
+        print_comment 'length = -1'
 
-        puts "####     length = -1\n\n"
-        puts ">> set key7 0 -1 -2\r\n"
-        puts ">> value\r\n"
-        @socket.puts "set key7 0 -1 -2\r\n"
-        @socket.puts "value\r\n"
-        puts "#{@socket.gets}\n"
-          #=> CLIENT_ERROR <length> is not an unsigned integer
+        @storage_cmd_name = Memcached::SET_CMD_NAME
+        @key = 'key7'
+        @flags = 0
+        @exptime = -1
+        length = -2
+        @data_block = 'value'
+        @cas_key = false
+        storage_request_handler length
+         #=> CLIENT_ERROR <length> is not an unsigned integer
 
-        puts "####     flags = -1\n\n"
-        puts ">> set key8 -1 9000 5\r\n"
-        puts ">> value\r\n"
-        @socket.puts "set key8 -1 9000 5\r\n"
-        @socket.puts "value\r\n"
-        puts "#{@socket.gets}\n"
-          #=> CLIENT_ERROR <flags> is not a 16-bit unsigned integer
+        print_comment 'flags = -1'
 
-        puts "####     exptime = b\n\n"
-        puts ">> add key9 3 b 5\r\n"
-        puts ">> value\r\n"
-        @socket.puts "add key9 3 b 5\r\n"
-        @socket.puts "value\r\n"
-        puts "#{@socket.gets}\n"
-          #=> CLIENT_ERROR <exptime> is not a 16-bit unsigned integer
+        @key = 'key8'
+        @flags = -1
+        @exptime = 9000
+        storage_request_handler
+         #=> CLIENT_ERROR <flags> is not a 16-bit unsigned integer
 
-        puts "####     cas_unique = q\n\n"
-        puts ">> cas key10 3 9000 5 q noreply\r\n"
-        puts ">> value\r\n"
-        @socket.puts "cas key10 3 9000 5 q noreply\r\n"
-        @socket.puts "value\r\n"
-        puts "#{@socket.gets}\n"
-          #=> CLIENT_ERROR <cas_unique> is not a 64-bit unsigned integer
+        print_comment 'exptime = "b"'
 
-        puts ">> set key11 3 9000 5 norep\r\n"
-        puts ">> value\r\n"
-        @socket.puts "set key11 3 9000 5 norep\r\n"
-        @socket.puts "value\r\n"
-        puts "#{@socket.gets}\n"
-          #=> CLIENT_ERROR "noreply" was expected as the 6th argument, but "norep" was received
+        @storage_cmd_name = Memcached::ADD_CMD_NAME
+        @key = 'key9'
+        @flags = 3
+        @exptime = 'b'
+        storage_request_handler
+         #=> CLIENT_ERROR <exptime> is not a 16-bit unsigned integer
+
+        print_comment 'cas_key = "q"'
+
+        @storage_cmd_name = Memcached::CAS_CMD_NAME
+        @key = 'key10'
+        @flags = 3
+        @exptime = 9000
+        @cas_key = 'q'
+        @no_reply = Memcached::NO_REPLY
+        storage_request_handler
+         #=> CLIENT_ERROR <cas_unique> is not a 64-bit unsigned integer
+
+        @storage_cmd_name = Memcached::SET_CMD_NAME
+        @key = 'key11'
+        @cas_key = false
+        @no_reply = 'norep'
+        storage_request_handler
+         #=> CLIENT_ERROR "noreply" was expected as the 6th argument, but "norep" was received
         
-        puts ">> set key12\r\n"
-        puts ">> value\r\n"
-        @socket.puts "set key12\r\n"
-        @socket.puts "value\r\n"
-        puts "#{@socket.gets}\n"
-          #=> CLIENT_ERROR The command has too few arguments
+        @no_reply = false
+        command = "#{Memcached::SET_CMD_NAME} key12#{Memcached::CMD_ENDING}"
+        print_command command
+        send_command command #=> CLIENT_ERROR The command has too few arguments
 
-        puts ">> set key13 78 67 5 435 tf\r\n"
-        puts ">> value\r\n"
-        @socket.puts "set key13 78 67 5 435 tf\r\n"
-        @socket.puts "value\r\n"
-        puts "#{@socket.gets}\n"
-          #=> CLIENT_ERROR The command has too many arguments
+        command = "#{Memcached::SET_CMD_NAME} key13 78 67 5 435 tf#{Memcached::CMD_ENDING}"
+        print_command command
+        send_command command #=> CLIENT_ERROR The command has too many arguments
 
-        puts ">> invalid_cmd_name key14 3 9000 5\r\n"
-        @socket.puts "invalid_cmd_name key14 3 9000 5\r\n"
-        puts "#{@socket.gets}\n"
-          #=> ERROR
+        command_name = 'invalid_cmd_name'
+        key = 'key14'
+        cmd = "#{command_name} #{key} #{@flags} #{@exptime} #{@data_block.length}#{Memcached::CMD_ENDING}"
+        puts ">> #{cmd}"
+        @socket.puts cmd
+        print_reply #=> ERROR
 
-        puts ">> get key"
-        @socket.puts "get key"
-        puts "#{@socket.gets}\n"
-          #=> CLIENT_ERROR Commands must be terminated by '\\r\n'
+        cmd = 'get key'
+        puts ">> #{cmd}"
+        @socket.puts cmd
+        print_reply
+         #=> CLIENT_ERROR Commands must be terminated by '#{Memcached::CMD_ENDING}'
         
-        key15 = "k" * (251)
-        puts ">> add key that exceeds maximum length (250 characters)\n"
-        @socket.puts "add #{key15} 8 1000 5\r\n"
-        @socket.puts "value\r\n"
-        puts "#{@socket.gets}\n"
-          #=> CLIENT_ERROR <key> has more than 250 characters
+        print_comment "set key that exceeds maximum length (#{MAX_KEY_LENGTH} characters)"
+        
+        @key = 'k' * (MAX_KEY_LENGTH + 1)
+        send_command request_line
+         #=> CLIENT_ERROR <key> has more than 250 characters
 
-        data_block = "d" * (2**20 + 1)
-        puts ">> set data_block that exceeds maximum length (1MB)\n"
-        @socket.puts "set key16 3 300 #{data_block.length}\r\n"
-        @socket.puts "#{data_block}\r\n"
-        puts "#{@socket.gets}\n"
-          #=> CLIENT_ERROR
+        print_comment 'set data_block that exceeds maximum length (1MB)'
+        
+        @key = 'key16'
+        @data_block = 'd' * (MAX_DATA_BLOCK_LENGTH + 1)
+        send_command request_line
+         #=> CLIENT_ERROR <data_block> has more than 1048576 characters
 
-        key17 = "key\0withnull"
-        puts ">> add key\\0withnull 4 24 14\r\n"
-        puts ">> value_null_key\r\n"
-        @socket.puts "add #{key17} 4 24 14\r\n"
-        @socket.puts "value_null_key\r\n"
-        puts "#{@socket.gets}\n"
-          #=> CLIENT_ERROR <key> must not include control characters
+        @key = "key\0withnull"
+        @data_block = 'value_null_key'
+        storage_request_handler
+         #=> CLIENT_ERROR <key> must not include control characters
+        
+        @key = 'key18'
+        @data_block = 'value with smaller length'
+        length = @data_block.length - 8
+        storage_request_handler length
+         #=> CLIENT_ERROR <length> (17) is not equal to the length of the item's data_block (24)
 
-        puts ">> set key18 42 240 10\r\n"
-        puts ">> value with smaller length\r\n"
-        @socket.puts "set key18 42 240 10\r\n"
-        @socket.puts "value with smaller length\r\n"
-        puts "#{@socket.gets}\n"
-          #=> CLIENT_ERROR <length> (10) is not equal to the length of the item's data_block (24)
-
-        dashed_line
-        puts "\n\n>> Close connection"
+        print_comment 'Close connection'
         @socket.close
       rescue IOError => e
         puts e.message
         @socket.close
       end
-    end
-
-    def dashed_line
-      puts "-" * 60
     end
   end
 

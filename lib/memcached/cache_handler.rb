@@ -42,17 +42,15 @@ module Memcached
       retrieval_obj.keys.each do |key|
       ################### SYNCHRO LECTOR
       if @cache.has_key? key # Keys that do not exists, do not appear on the response
-        
-        unless is_expired? @cache.expdate key
-          reply += "#{VALUE_LABEL}#{key} #{@cache.flags key} #{@cache.length key}"
-          if retrieval_obj.command_name == GETS_CMD_NAME
-            reply += " #{@cache.cas_key key}"
-          end
-          reply += CMD_ENDING
+        item = @cache.get key
 
-          reply += "#{@cache.data_block key}#{CMD_ENDING}"
+        unless is_expired? item[:expdate]
+          reply += "#{VALUE_LABEL}#{key} #{item[:flags]} #{item[:length]}"
+          if retrieval_obj.command_name == GETS_CMD_NAME
+            reply += " #{item[:cas_key]}"
+          end
+          reply += "#{CMD_ENDING}#{item[:data_block]}#{CMD_ENDING}"
         end
-        
       end
       ################## SYNCHRO LECTOR
       end

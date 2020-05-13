@@ -22,7 +22,7 @@ class SetHandlerTest < BaseTest
     assert_equal Memcached::STORED_MSG, reply
 
     new_data_block =  @prepend_storage_obj.data_block + @set_storage_obj.data_block
-    expected_get = {key: @set_storage_obj.key, flags: @set_storage_obj.flags, expdate: @set_storage_obj.expdate, length: new_data_block.length.to_s, cas_key: @cache_handler.cas_key, data_block: new_data_block}
+    expected_get = data_to_hash @set_storage_obj.key, @set_storage_obj.flags, @set_storage_obj.expdate, new_data_block.length.to_s, @cache_handler.cas_key, new_data_block
     assert_equal expected_get, @cache_handler.cache.get(@prepend_storage_obj.key)
   end
 
@@ -44,7 +44,7 @@ class SetHandlerTest < BaseTest
     reply = @cache_handler.storage_handler storage_obj_empty
     assert_equal Memcached::STORED_MSG, reply
 
-    expected_get = {key: @set_storage_obj.key, flags: @set_storage_obj.flags, expdate: @set_storage_obj.expdate, length: @set_storage_obj.length, cas_key: @cache_handler.cas_key, data_block: @set_storage_obj.data_block}
+    expected_get = data_to_hash @set_storage_obj.key, @set_storage_obj.flags, @set_storage_obj.expdate, @set_storage_obj.length, @cache_handler.cas_key, @set_storage_obj.data_block
     assert_equal expected_get, @cache_handler.cache.get(storage_obj_empty.key)
   end
 
@@ -59,7 +59,7 @@ class SetHandlerTest < BaseTest
     end
     assert_equal Memcached::DATA_BLOCK_TOO_LONG_MSG, exception.message
 
-    expected_get = {key: @set_storage_obj.key, flags: @set_storage_obj.flags, expdate: @set_storage_obj.expdate, length: @set_storage_obj.length, cas_key: @cache_handler.cas_key, data_block: @set_storage_obj.data_block}
+    expected_get = data_to_hash @set_storage_obj.key, @set_storage_obj.flags, @set_storage_obj.expdate, @set_storage_obj.length, @cache_handler.cas_key, @set_storage_obj.data_block
     assert_equal expected_get, @cache_handler.cache.get(@set_storage_obj.key)
   end
 
@@ -70,7 +70,7 @@ class SetHandlerTest < BaseTest
     assert_equal Memcached::STORED_MSG, reply
 
     new_data_block =  @set_storage_obj.data_block + @append_storage_obj.data_block
-    expected_get = {key: @set_storage_obj.key, flags: @set_storage_obj.flags, expdate: @set_storage_obj.expdate, length: new_data_block.length.to_s, cas_key: @cache_handler.cas_key, data_block: new_data_block}
+    expected_get = data_to_hash @set_storage_obj.key, @set_storage_obj.flags, @set_storage_obj.expdate, new_data_block.length.to_s, @cache_handler.cas_key, new_data_block
     assert_equal expected_get, @cache_handler.cache.get(@append_storage_obj.key)
   end
 
@@ -92,7 +92,7 @@ class SetHandlerTest < BaseTest
     reply = @cache_handler.storage_handler storage_obj_empty
     assert_equal Memcached::STORED_MSG, reply
 
-    expected_get = {key: @set_storage_obj.key, flags: @set_storage_obj.flags, expdate: @set_storage_obj.expdate, length: @set_storage_obj.length, cas_key: @cache_handler.cas_key, data_block: @set_storage_obj.data_block}
+    expected_get = data_to_hash @set_storage_obj.key, @set_storage_obj.flags, @set_storage_obj.expdate, @set_storage_obj.length, @cache_handler.cas_key, @set_storage_obj.data_block
     assert_equal expected_get, @cache_handler.cache.get(storage_obj_empty.key)
   end
 
@@ -107,7 +107,7 @@ class SetHandlerTest < BaseTest
     end
     assert_equal Memcached::DATA_BLOCK_TOO_LONG_MSG, exception.message
 
-    expected_get = {key: @set_storage_obj.key, flags: @set_storage_obj.flags, expdate: @set_storage_obj.expdate, length: @set_storage_obj.length, cas_key: @cache_handler.cas_key, data_block: @set_storage_obj.data_block}
+    expected_get = data_to_hash @set_storage_obj.key, @set_storage_obj.flags, @set_storage_obj.expdate, @set_storage_obj.length, @cache_handler.cas_key, @set_storage_obj.data_block
     assert_equal expected_get, @cache_handler.cache.get(@set_storage_obj.key)
   end
 end

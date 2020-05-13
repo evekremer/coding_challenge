@@ -20,7 +20,7 @@ class SetHandlerTest < BaseTest
     reply = @cache_handler.storage_handler @add_storage_obj
     assert_equal Memcached::STORED_MSG, reply
 
-    expected_get = {key: @add_storage_obj.key, flags: @add_storage_obj.flags, expdate: @add_storage_obj.expdate, length: @add_storage_obj.length, cas_key: @cache_handler.cas_key, data_block: @add_storage_obj.data_block}
+    expected_get = data_to_hash @add_storage_obj.key, @add_storage_obj.flags, @add_storage_obj.expdate, @add_storage_obj.length, @cache_handler.cas_key, @add_storage_obj.data_block
     assert_equal expected_get, @cache_handler.cache.get(@add_storage_obj.key)
   end
 
@@ -30,7 +30,7 @@ class SetHandlerTest < BaseTest
     reply = @cache_handler.storage_handler @add_storage_obj
     assert_equal Memcached::NOT_STORED_MSG, reply
 
-    expected_get = {key: @set_storage_obj.key, flags: @set_storage_obj.flags, expdate: @set_storage_obj.expdate, length: @set_storage_obj.length, cas_key: @cache_handler.cas_key, data_block: @set_storage_obj.data_block}
+    expected_get = data_to_hash @set_storage_obj.key, @set_storage_obj.flags, @set_storage_obj.expdate, @set_storage_obj.length, @cache_handler.cas_key, @set_storage_obj.data_block
     assert_equal expected_get, @cache_handler.cache.get(@set_storage_obj.key)
   end
 
@@ -41,7 +41,7 @@ class SetHandlerTest < BaseTest
     reply = @cache_handler.storage_handler storage_obj_empty
     assert_equal Memcached::STORED_MSG, reply
 
-    expected_get = {key: storage_obj_empty.key, flags: storage_obj_empty.flags, expdate: storage_obj_empty.expdate, length: storage_obj_empty.length, cas_key: @cache_handler.cas_key, data_block: storage_obj_empty.data_block}
+    expected_get = data_to_hash storage_obj_empty.key, storage_obj_empty.flags, storage_obj_empty.expdate, storage_obj_empty.length, @cache_handler.cas_key, storage_obj_empty.data_block
     assert_equal expected_get, @cache_handler.cache.get(storage_obj_empty.key)
   end
 
@@ -53,7 +53,7 @@ class SetHandlerTest < BaseTest
     reply = @cache_handler.storage_handler @replace_storage_obj
     assert_equal Memcached::STORED_MSG, reply
 
-    expected_get = {key: @replace_storage_obj.key, flags: @replace_storage_obj.flags, expdate: @replace_storage_obj.expdate, length: @replace_storage_obj.length, cas_key: @cache_handler.cas_key, data_block: @replace_storage_obj.data_block}
+    expected_get = data_to_hash @replace_storage_obj.key, @replace_storage_obj.flags, @replace_storage_obj.expdate, @replace_storage_obj.length, @cache_handler.cas_key, @replace_storage_obj.data_block
     assert_equal expected_get, @cache_handler.cache.get(@replace_storage_obj.key)
   end
 
@@ -74,7 +74,7 @@ class SetHandlerTest < BaseTest
     reply = @cache_handler.storage_handler storage_obj_empty
     assert_equal Memcached::STORED_MSG, reply
 
-    expected_get = {key: @set_storage_obj.key, flags: @set_storage_obj.flags, expdate: storage_obj_empty.expdate, length: storage_obj_empty.length, cas_key: @cache_handler.cas_key, data_block: storage_obj_empty.data_block}
+    expected_get = data_to_hash @set_storage_obj.key, @set_storage_obj.flags, storage_obj_empty.expdate, storage_obj_empty.length, @cache_handler.cas_key, storage_obj_empty.data_block
     assert_equal expected_get, @cache_handler.cache.get(storage_obj_empty.key)
   end
 end

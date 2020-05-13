@@ -4,42 +4,37 @@ class DoublyLinkedList
     
     def initialize data
 			self.data = data
-			self.prev = nil
+      self.prev = nil
+      self.next = nil
 		end
 	end
 
-  attr_accessor :head, :tail, :length
+  attr_accessor :head, :tail
   
 	def initialize
 		self.head   = nil
 		self.tail   = nil
-		self.length = 0
   end
 
-	# Inserts a new item into the head of the list
+	# Inserts a new data into the head of the list
 	# Complexity: O(1)
-  def insert_head data
+  def insert_new_head data
     node = Node.new data
-    success = update_head node
-    return nil unless success
-    
-    self.length += 1 
+    update_head node
     node
   end
 
-  # Updates the head of the list
-	# Complexity: O(1)
-  def update_head node
-    return nil unless node
+  # Inserts a node into the head of the list
+  # Complexity: O(1)
+  def insert_head node
+    removed_node = remove node
+    return nil unless removed_node
     
-		unless tail
-			self.tail = node
-		else
-			node.next = self.head
-			self.head.prev = node
-		end
-		self.head = node
-	end
+    removed_node.prev = nil
+    removed_node.next = nil
+    
+    update_head removed_node
+  end
 
 	# Removes an item from the list
 	# Complexity: O(1)
@@ -58,7 +53,22 @@ class DoublyLinkedList
 			p&.next = n
 			n&.prev = p
 		end
-    self.length -= 1
     node
+  end
+  
+  private
+
+  # Sets the head of the list
+	# Complexity: O(1)
+  def update_head node
+    return nil unless node
+    
+		unless tail
+			self.tail = node
+		else
+			node.next = self.head
+			self.head.prev = node
+		end
+    self.head = node
 	end
 end

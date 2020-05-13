@@ -37,7 +37,7 @@ class BaseTest < Test::Unit::TestCase
     request += Memcached::CMD_ENDING
 
     socket.puts request
-    socket.puts "#{value}" + Memcached::CMD_ENDING
+    socket.puts "#{value}#{Memcached::CMD_ENDING}"
   end
 
   def send_get_cmd(key, gets = false)
@@ -125,6 +125,10 @@ class BaseTest < Test::Unit::TestCase
 
   def wait_for_purge_exec
     sleep(Memcached::PURGE_EXPIRED_KEYS_FREQUENCY_SECS+2)
+  end
+
+  def data_to_hash key, flags, expdate, length, cas_key, data_block
+    {:key=>key, :flags=>flags, :expdate=>expdate, :length=>length, :cas_key=>cas_key, :data_block=> data_block}
   end
 end
 

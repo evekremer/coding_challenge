@@ -34,7 +34,7 @@ class SetHandlerTest < BaseTest
     reply = @cache_handler.storage_handler @cas_obj_stored
     assert_equal Memcached::STORED_MSG, reply
 
-    expected_get = {key: @cas_obj_stored.key, flags: @cas_obj_stored.flags, expdate: @cas_obj_stored.expdate, length: @cas_obj_stored.length, cas_key: @cache_handler.cas_key, data_block: @cas_obj_stored.data_block}
+    expected_get = data_to_hash @cas_obj_stored.key, @cas_obj_stored.flags, @cas_obj_stored.expdate, @cas_obj_stored.length, @cache_handler.cas_key, @cas_obj_stored.data_block
     assert_equal expected_get, @cache_handler.cache.get(@cas_obj_stored.key)
   end
 
@@ -42,7 +42,7 @@ class SetHandlerTest < BaseTest
     reply = @cache_handler.storage_handler @cas_obj_exists
     assert_equal Memcached::EXISTS_MSG, reply
 
-    expected_get = {key: @set_storage_obj.key, flags: @set_storage_obj.flags, expdate: @set_storage_obj.expdate, length: @set_storage_obj.length, cas_key: @cache_handler.cas_key, data_block: @set_storage_obj.data_block}
+    expected_get = data_to_hash @set_storage_obj.key, @set_storage_obj.flags, @set_storage_obj.expdate, @set_storage_obj.length, @cache_handler.cas_key, @set_storage_obj.data_block
     assert_equal expected_get, @cache_handler.cache.get(@cas_obj_exists.key)
   end
 
@@ -58,7 +58,7 @@ class SetHandlerTest < BaseTest
     reply = @cache_handler.storage_handler @cas_obj_empty
     assert_equal Memcached::STORED_MSG, reply
 
-    expected_get = {key: @cas_obj_empty.key, flags: @cas_obj_empty.flags, expdate: @cas_obj_empty.expdate, length: @cas_obj_empty.length, cas_key: @cache_handler.cas_key, data_block: @cas_obj_empty.data_block}
+    expected_get = data_to_hash @cas_obj_empty.key, @cas_obj_empty.flags, @cas_obj_empty.expdate, @cas_obj_empty.length, @cache_handler.cas_key, @cas_obj_empty.data_block
     assert_equal expected_get, @cache_handler.cache.get(@cas_obj_empty.key)
   end
 end
