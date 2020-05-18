@@ -5,7 +5,7 @@ require_relative "../test_helper"
 class MixinValidateTest < BaseTest
   include Memcached::Mixin
   
-  ####### Test validate_and_remove_ending! method
+  # Test validate_and_remove_ending! method
   
   def test_validate_ending_length_zero
     command = '' # length zero
@@ -81,7 +81,7 @@ class MixinValidateTest < BaseTest
     end
   end
 
-  ####### Test validate_data_block_length! method
+  # Test validate_data_block_length! method
 
   def test_validate_db_length
     assert_nothing_raised do
@@ -136,7 +136,7 @@ class MixinValidateTest < BaseTest
     end
   end
 
-  ####### Test validate_parameters_min_length! method
+  # Test validate_parameters_min_length! method
 
   def test_validate_parameters_min_length_equal
     parameters = ["#{key}"]
@@ -184,7 +184,7 @@ class MixinValidateTest < BaseTest
     end
   end
 
-  ####### Test validate_parameters_max_length! method
+  # Test validate_parameters_max_length! method
 
   def test_validate_parameters_max_length_equal
     parameters = ["#{key}"]
@@ -232,7 +232,7 @@ class MixinValidateTest < BaseTest
     end
   end
 
-  ####### Test validate_flags! method
+  # Test validate_flags! method
 
   def test_validate_flags_integer_positive
     assert_nothing_raised do
@@ -292,7 +292,7 @@ class MixinValidateTest < BaseTest
     assert_equal Memcached::FLAGS_TYPE_MSG, exception.message
   end
   
-  ####### Test validate_length! method
+  # Test validate_length! method
 
   def test_validate_length_integer_positive
     assert_nothing_raised do
@@ -344,7 +344,7 @@ class MixinValidateTest < BaseTest
     assert_equal Memcached::LENGTH_TYPE_MSG, exception.message
   end
   
-  ####### Test validate_exptime! method
+  # Test validate_exptime! method
 
   def test_validate_exptime_integer_positive
     assert_nothing_raised do
@@ -394,9 +394,9 @@ class MixinValidateTest < BaseTest
     assert_equal Memcached::EXPTIME_TYPE_MSG, exception.message
   end
 
-  ####### Test validate_key! method
+  # Test validate_key! method
 
-  # Validate key is not empty
+  #=> Validate key is not empty
 
   def test_validate_key_not_empty
     assert_nothing_raised do
@@ -426,7 +426,7 @@ class MixinValidateTest < BaseTest
     assert_equal Memcached::KEY_NOT_PROVIDED_MSG, exception.message
   end
 
-  # Contains control characters
+  #=> Contains control characters
 
   def test_validate_key_with_control_chars
     exception = assert_raise Memcached::TypeClientError do
@@ -436,7 +436,7 @@ class MixinValidateTest < BaseTest
     assert_equal Memcached::KEY_WITH_CONTROL_CHARS_MSG, exception.message
   end
 
-  # Validate key length
+  #=> Validate key length
 
   def test_validate_key_valid_length
     key = 'k' * (Memcached::MAX_KEY_LENGTH)

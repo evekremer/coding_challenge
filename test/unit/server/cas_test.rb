@@ -58,7 +58,7 @@ class ServerCasTest < BaseTest
     assert_equal expected_msg, read_reply(3)
   end
 
-  # ####     Test invalid parameters
+  #     Test invalid parameters
 
   def test_negative_cas_unique_key
     cas_key = -2
@@ -69,7 +69,6 @@ class ServerCasTest < BaseTest
     assert_equal Memcached::END_MSG, read_reply
   end
 
-  # cas_unique_key bigger than the maximum 64-bit integer
   def test_exceeds_max_cas_unique_key
     cas_key = Memcached::CAS_KEY_LIMIT + 1
     send_storage_cmd Memcached::CAS_CMD_NAME, key, flags, exptime, value.length, cas_key, value, false
@@ -138,7 +137,7 @@ class ServerCasTest < BaseTest
     assert_equal Memcached::END_MSG, read_reply
   end
 
-  ##### Test cas error responses
+  # Test cas error responses
 
   def test_noreply_syntax_error_cas
     no_reply = "#{Memcached::NO_REPLY}#{Memcached::NO_REPLY}"

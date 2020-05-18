@@ -3,7 +3,7 @@ module Memcached
     include Mixin
     NEGATIVE_MAX_CAPACITY_ERROR = '<max_capacity> must not be negative'
 
-    attr_reader :total_length_stored, :cache, :lru_linked_list
+    attr_reader :total_length_stored, :cache, :lru_linked_list, :max_capacity
 
     def initialize max_capacity
       @total_length_stored = 0
@@ -29,46 +29,22 @@ module Memcached
     end
 
     def get key
-      if has_key? key
-        access key
-        @cache[key.to_sym].data
-      else
-        {}
-      end
-    end
-
-    def flags key
-      @cache[key.to_sym].data[:flags]
-    end
-
-    def expdate key
-      @cache[key.to_sym].data[:expdate]
-    end
-
-    def length key
-      if has_key? key
-        @cache[key.to_sym].data[:length].to_i
-      else
-        0
-      end
-    end
-
-    def cas_key key
-      @cache[key.to_sym].data[:cas_key]
-    end
-
-    def data_block key
-      @cache[key.to_sym].data[:data_block]
+      return nil unless has_key? key
+      
+      access key
+      @cache[key.to_sym].data
     end
 
     def store key, flags, expdate, length, cas_key, data_block
       # Determine the length added to the total stored
-      stored_item_length = length(key)
+      stored_item_length = length key
       added_length = length.to_i - stored_item_length
 
-      # Delete least-recently used item
+      # Delete least-recently used items
       # if maximum capacity is reached by storing the new item
-      evict_lru if @total_length_stored + added_length > @max_capacity
+      while @total_length_stored + added_length > @max_capacity
+        evict_lru
+      end
 
       # Store new item and update state of cache
       data = {key: key, flags: flags, expdate: expdate, length: length, cas_key: cas_key, data_block: data_block}
@@ -88,6 +64,12 @@ module Memcached
 
     private
 
+    def length key
+      return 0 unless has_key? key
+
+      @cache[key.to_sym].data[:length].to_i
+    end
+
     # Set 'key' as the most recently used
     def access key
       @lru_linked_list.insert_head @cache[key.to_sym]
@@ -95,16 +77,17 @@ module Memcached
 
     # Remove least-recently used from cache
     def evict_lru
+puts "EVICTING----------------------- #{@lru_linked_list.tail.data[:key]}"
       remove @lru_linked_list.tail
     end
 
     def remove node
-      @lru_linked_list.remove node
-      
       key = node.data[:key]
-      @cache.delete(key.to_sym)
+      
+      @total_length_stored -= length key
+      @cache.delete key.to_sym
 
-      @total_length_stored -= length(key)
+      @lru_linked_list.remove node
     end
   end
 end

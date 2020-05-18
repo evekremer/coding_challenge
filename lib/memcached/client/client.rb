@@ -11,24 +11,28 @@ module Memcached
       @response_object.join # receive response from server
     end
 
+    def dashed_line
+      puts "-" * 60
+    end
+
     def send_request
       begin
         puts "\n\n"
-        puts "-" * 60
+        dashed_line
         puts "STORAGE COMMANDS\n"
-        puts "-" * 60
+        dashed_line
         puts "First, enter the command line which looks like this:\n\n"
         puts ">>  <command name> <key> <flags> <exptime> <bytes> [noreply]\n"
         puts ">>  cas <key> <flags> <exptime> <bytes> <cas unique> [noreply]\n"
         puts "\nAfter this line, enter the data block of the item\n\n"
-        puts "-" * 60
+        dashed_line
         puts "RETRIEVAL COMMANDS\n"
-        puts "-" * 60
+        dashed_line
         puts "Enter one of the following command lines:\n\n"
         puts ">>  get <key>*\n"
         puts ">>  gets <key>*\n"
         puts "\nwhere <key>* means one or more key strings separated by whitespace\n"
-        puts "-" * 60
+        dashed_line
         puts "\n\n\n"
 
         Thread.new do

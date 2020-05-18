@@ -4,7 +4,7 @@ require_relative "../../test_helper"
 # Unit test for Memcached::StorageCommand class
 class StorageCommandTest < BaseTest
   include Memcached::Mixin
-  #################### Test command_name attribute
+  # Test command_name attribute
 
   def test_valid_set_command_name
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
@@ -41,7 +41,7 @@ class StorageCommandTest < BaseTest
     assert_equal Memcached::APPEND_CMD_NAME, storage_obj.command_name
   end
 
-  def test_invalid_command_name
+  def test_invalid_command_name_storage
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
 
     assert_raise ArgumentError do
@@ -49,7 +49,7 @@ class StorageCommandTest < BaseTest
     end
   end
 
-  def test_coerces_string_type_command_name
+  def test_coerces_string_type_command_name_storage
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
 
     assert_raise ArgumentError do
@@ -57,16 +57,16 @@ class StorageCommandTest < BaseTest
     end
   end
 
-  #################### Test key attribute
+  # Test key attribute
   
-  def test_valid_key
+  def test_valid_key_storage
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
     storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
 
     assert_equal parameters[0], storage_obj.key
   end
 
-  def test_key_not_provided
+  def test_key_not_provided_storage
     key = ''
     parameters = [key, "#{flags}", "#{exptime}", "#{data_block.length}"]
     
@@ -76,7 +76,7 @@ class StorageCommandTest < BaseTest
     assert_equal Memcached::KEY_NOT_PROVIDED_MSG, exception.message
   end
 
-  def test_key_with_control_chars
+  def test_key_with_control_chars_storage
     key = "key_\t_\0_\n_"
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
 
@@ -86,7 +86,7 @@ class StorageCommandTest < BaseTest
     assert_equal Memcached::KEY_WITH_CONTROL_CHARS_MSG, exception.message
   end
 
-  def test_key_too_long
+  def test_key_too_long_storage
     key = 'k' * (Memcached::MAX_KEY_LENGTH + 1)
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
 
@@ -96,7 +96,7 @@ class StorageCommandTest < BaseTest
     assert_equal Memcached::KEY_TOO_LONG_MSG, exception.message
   end
 
-  def test_nil_key
+  def test_nil_key_storage
     key = nil
     parameters = [key, "#{flags}", "#{exptime}", "#{data_block.length}"]
 
@@ -106,14 +106,14 @@ class StorageCommandTest < BaseTest
     assert_equal Memcached::KEY_NOT_PROVIDED_MSG, exception.message
   end
 
-  def test_coerces_string_type_key
+  def test_coerces_string_type_key_storage
     parameters = [key.length, "#{flags}", "#{exptime}", "#{data_block.length}"] # Numeric key
     storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
 
     assert_equal parameters[0].to_s, storage_obj.key
   end
 
-  #################### Test flags attribute
+  # Test flags attribute
 
   def test_valid_flags
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
@@ -150,7 +150,7 @@ class StorageCommandTest < BaseTest
     assert_equal flags.to_s, storage_obj.flags
   end
 
-  #################### Test exptime attribute
+  # Test exptime attribute
 
   def test_valid_exptime
     exptime = 40
@@ -214,7 +214,7 @@ class StorageCommandTest < BaseTest
     assert_equal Memcached::EXPTIME_TYPE_MSG, exception.message
   end
 
-  #################### Test length attribute
+  # Test length attribute
 
   def test_valid_length
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
@@ -250,7 +250,7 @@ class StorageCommandTest < BaseTest
     assert_equal parameters[3].to_s, storage_obj.length
   end
 
-  #################### Test data_block attribute
+  # Test data_block attribute
 
   def test_valid_datablock
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
@@ -296,7 +296,7 @@ class StorageCommandTest < BaseTest
     assert_equal data_block, storage_obj.data_block
   end
 
-  #################### Test parameters_max_length attribute
+  # Test parameters_max_length attribute
   
   def test_default_parameters_max_length
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
@@ -341,7 +341,7 @@ class StorageCommandTest < BaseTest
     assert_equal Memcached::TOO_MANY_ARGUMENTS_MSG, exception.message
   end
 
-  #################### Test no reply
+  # Test no reply
 
   def test_with_valid_no_reply
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}", "#{Memcached::NO_REPLY}"]

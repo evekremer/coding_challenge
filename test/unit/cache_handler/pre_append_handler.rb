@@ -1,7 +1,7 @@
 require_relative "../../test_helper"
 
 # Test pre_append method for CacheHandler class
-class SetHandlerTest < BaseTest
+class PreAppendHandlerTest < BaseTest
   def setup
     @cache_handler = Memcached::CacheHandler.new
     
@@ -32,8 +32,7 @@ class SetHandlerTest < BaseTest
     reply = @cache_handler.storage_handler prepend_storage_obj
     assert_equal Memcached::NOT_STORED_MSG, reply
 
-    expected_get = {}
-    assert_equal expected_get, @cache_handler.cache.get(prepend_storage_obj.key)
+    assert_nil @cache_handler.cache.get(prepend_storage_obj.key)
   end
 
   def test_empty_prepend
@@ -80,8 +79,7 @@ class SetHandlerTest < BaseTest
     reply = @cache_handler.storage_handler append_storage_obj
     assert_equal Memcached::NOT_STORED_MSG, reply
 
-    expected_get = {}
-    assert_equal expected_get, @cache_handler.cache.get(append_storage_obj.key)
+    assert_nil @cache_handler.cache.get(append_storage_obj.key)
   end
 
   def test_empty_append

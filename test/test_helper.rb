@@ -23,24 +23,17 @@ class BaseTest < Test::Unit::TestCase
     @socket = TCPSocket.open( "localhost", 9999 )
   end
 
-  def send_storage_cmd(cmd_name, key, flags, exptime, length, unique_cas_key, value, noreply = false)
+  def send_storage_cmd cmd_name, key, flags, exptime, length, unique_cas_key, value, noreply = false
     request = "#{cmd_name} #{key} #{flags} #{exptime} #{length}"
-    
-    if unique_cas_key
-      request += " #{unique_cas_key}"
-    end
-
-    if noreply
-      request += " #{Memcached::NO_REPLY}"
-    end
-
+    request += " #{unique_cas_key}" if unique_cas_key
+    request += " #{Memcached::NO_REPLY}" if noreply
     request += Memcached::CMD_ENDING
 
     socket.puts request
     socket.puts "#{value}#{Memcached::CMD_ENDING}"
   end
 
-  def send_get_cmd(key, gets = false)
+  def send_get_cmd key, gets = false
     if gets
       cmd_name = Memcached::GETS_CMD_NAME
     else
@@ -49,29 +42,23 @@ class BaseTest < Test::Unit::TestCase
     socket.puts "#{cmd_name} #{key}#{Memcached::CMD_ENDING}"
   end
 
-  def expected_get_response(key, flags, length, value, unique_cas_key = false, multi = false)
+  def expected_get_response key, flags, length, value, unique_cas_key = false, multi = false
     reply = "#{Memcached::VALUE_LABEL}#{key} #{flags} #{length}"
-    if unique_cas_key
-      reply += " #{unique_cas_key}"
-    end
+    reply += " #{unique_cas_key}" if unique_cas_key
     reply += Memcached::CMD_ENDING
     reply += "#{value}#{Memcached::CMD_ENDING}"
-    
-    unless multi
-      reply += Memcached::END_MSG
-    end
-    
+    reply += Memcached::END_MSG unless multi
     reply
   end
 
   # Returns cas key returned from the "gets" command of an existing key
   def get_cas_key(key)
-    socket.puts "#{Memcached::GETS_CMD_NAME} #{key}\r\n"
+    socket.puts "#{Memcached::GETS_CMD_NAME} #{key}#{Memcached::CMD_ENDING}"
 
-    reply = @socket.gets
+    reply = socket.gets
     cas_key = reply.split[4]
     cas_key = cas_key.delete Memcached::CMD_ENDING
-    2.times {@socket.gets}
+    2.times {socket.gets}
     cas_key.to_i
   end
 
@@ -90,7 +77,7 @@ class BaseTest < Test::Unit::TestCase
   
   def read_reply num_lines = 1
     reply = ""
-    num_lines.times { reply += @socket.gets }
+    num_lines.times { reply += socket.gets }
     reply
   end
 

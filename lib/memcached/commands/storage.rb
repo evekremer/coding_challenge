@@ -40,7 +40,7 @@ module Memcached
       expdate
     end
 
-    # Determine if the optional "noreply" parameter is included in command
+    # Determine if the optional NO_REPLY parameter is included in command
     def has_no_reply? parameters
       no_reply = false
       if parameters.length == @parameters_max_length

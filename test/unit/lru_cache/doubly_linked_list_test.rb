@@ -34,7 +34,8 @@ class DoublyLinkedListTest < BaseTest
   ## Test insert_new_head
 
   def test_insert_new_data_first_element
-    @empty_list.insert_new_head @data[0]
+    new_data = {key: key, value: value}
+    @empty_list.insert_new_head new_data
     
     assert_equal @empty_list.head, @empty_list.tail
     assert_nil @empty_list.head.next
@@ -98,15 +99,31 @@ class DoublyLinkedListTest < BaseTest
   end
 
   def test_remove_list
+    # Remove the second element of the list
     node = @linked_list.head.next
-    # Remove the second element of the list (not head)
     removed_node = @linked_list.remove node
+    @data.delete node.data
 
-    assert validate_each @linked_list, [@data[0]] + @data[2..-1]
+    assert validate_each @linked_list, @data
+  end
+
+  def test_remove_list_head
+    node = @linked_list.head
+    removed_node = @linked_list.remove node
+    @data.delete node.data
+
+    assert validate_each @linked_list, @data
+  end
+
+  def test_remove_list_tail
+    node = @linked_list.tail
+    removed_node = @linked_list.remove node
+    @data.delete node.data
+
+    assert validate_each @linked_list, @data
   end
 
   def test_remove_nil
     assert_nil @linked_list.remove nil
   end
-
 end

@@ -96,9 +96,9 @@ class ServerSetTest < BaseTest
     assert_equal expected_get, read_reply(3)
   end
 
-  # ####     Test invalid parameters
+  ####     Test invalid parameters
 
-  # #=> Key
+  #=> Key
 
   def test_set_key_with_whitespaces_1
     key = 'key with whitespaces'
@@ -171,7 +171,7 @@ class ServerSetTest < BaseTest
     assert_equal Memcached::END_MSG, read_reply
   end
 
-  # #=> Flags
+  #=> Flags
 
   def test_set_negative_flags
     negative_flags = -4
@@ -219,7 +219,7 @@ class ServerSetTest < BaseTest
     assert_equal Memcached::END_MSG, read_reply
   end
 
-  # #=> Exptime
+  #=> Exptime
 
   def test_set_string_exptime_with_digits
     exptime_with_digits = 'test_exptime_1234'
@@ -263,7 +263,7 @@ class ServerSetTest < BaseTest
     assert_equal Memcached::END_MSG, read_reply
   end
 
-  # #=> Length
+  #=> Length
 
   def test_set_negative_length
     negative_length = -6

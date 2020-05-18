@@ -76,7 +76,7 @@ class ServerTest < BaseTest
     assert_equal Memcached::END_MSG, read_reply
   end
 
-  ######## Invalid command name error
+  # Invalid command name error
 
   def test_invalid_command_name
     command_name = 'invalid_command_name'

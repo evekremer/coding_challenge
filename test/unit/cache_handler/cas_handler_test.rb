@@ -1,7 +1,7 @@
 require_relative "../../test_helper"
 
 # Test cas method for CacheHandler class
-class SetHandlerTest < BaseTest
+class CasHandlerTest < BaseTest
   def setup
     @cache_handler = Memcached::CacheHandler.new
     
@@ -50,8 +50,7 @@ class SetHandlerTest < BaseTest
     reply = @cache_handler.storage_handler @cas_obj_not_found
     assert_equal Memcached::NOT_FOUND_MSG, reply
 
-    expected_get = {}
-    assert_equal expected_get, @cache_handler.cache.get(@cas_obj_not_found.key)
+    assert_nil @cache_handler.cache.get(@cas_obj_not_found.key)
   end
 
   def test_empty_data_block_cas

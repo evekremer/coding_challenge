@@ -29,10 +29,7 @@ class DoublyLinkedList
   def insert_head node
     removed_node = remove node
     return nil unless removed_node
-    
-    removed_node.prev = nil
-    removed_node.next = nil
-    
+
     update_head removed_node
   end
 
@@ -45,14 +42,20 @@ class DoublyLinkedList
 			if head.next.nil?
 				self.head = self.tail = nil
 			else
-				self.head = self.head.next
-			end
+        self.head = self.head.next
+        self.head.prev = nil
+      end
+    elsif node == tail
+      self.tail = self.tail.prev
+      self.tail.next = nil
 		else
 			p = node.prev
 			n = node.next
 			p&.next = n
 			n&.prev = p
-		end
+    end
+    
+    node.prev = node.next = nil
     node
   end
   

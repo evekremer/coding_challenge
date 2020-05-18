@@ -4,7 +4,7 @@ require_relative "../../test_helper"
 # Unit test for Memcached::CasCommand class
 class Memcached::CasCommandTest < BaseTest
   include Memcached::Mixin
-  #################### Test command_name attribute
+  # Test command_name attribute
 
   def test_valid_cas_command_name
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}", "#{cas_key}"]
@@ -13,7 +13,7 @@ class Memcached::CasCommandTest < BaseTest
     assert_equal Memcached::CAS_CMD_NAME, storage_obj.command_name
   end
 
-  #################### Test cas_key attribute
+  # Test cas_key attribute
 
   def test_valid_cas_key
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}", "#{cas_key}"]
@@ -59,7 +59,7 @@ class Memcached::CasCommandTest < BaseTest
     assert_equal Memcached::CAS_KEY_TYPE_MSG, exception.message
   end
 
-  #################### Test invalid number of parameters
+  # Test invalid number of parameters
   
   def test_default_parameters_max_length
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}", "#{cas_key}"]
@@ -87,7 +87,7 @@ class Memcached::CasCommandTest < BaseTest
     assert_equal Memcached::TOO_MANY_ARGUMENTS_MSG, exception.message
   end
 
-  #################### Test no reply
+  # Test no reply
 
   def test_with_valid_no_reply
     parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}", "#{cas_key}", "#{Memcached::NO_REPLY}"]

@@ -1,7 +1,7 @@
 require_relative "../../test_helper"
 
 # Test add_replace method for CacheHandler class
-class SetHandlerTest < BaseTest
+class AddReplaceHandlerTest < BaseTest
   def setup
     @cache_handler = Memcached::CacheHandler.new
     
@@ -61,8 +61,7 @@ class SetHandlerTest < BaseTest
     reply = @cache_handler.storage_handler @replace_storage_obj
     assert_equal Memcached::NOT_STORED_MSG, reply
 
-    expected_get = {}
-    assert_equal expected_get, @cache_handler.cache.get(@replace_storage_obj.key)
+    assert_nil @cache_handler.cache.get(@replace_storage_obj.key)
   end
 
   def test_empty_replace

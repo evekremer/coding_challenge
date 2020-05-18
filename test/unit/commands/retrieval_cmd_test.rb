@@ -4,7 +4,7 @@ require_relative "../../test_helper"
 # Unit test for Memcached::StorageCommand class
 class StorageCommandTest < BaseTest
 
-  #################### Test command_name attribute
+  # Test command_name attribute
 
   def test_valid_get_command_name
     keys = ["#{key}"]
@@ -36,7 +36,7 @@ class StorageCommandTest < BaseTest
     end
   end
 
-  #################### Test key attribute
+  # Test key attribute
   
   def test_valid_key
     keys = ["#{key}"]
@@ -90,7 +90,7 @@ class StorageCommandTest < BaseTest
     assert_equal keys[0].to_s, retrieval_obj.keys[0]
   end
 
-  #################### Test keys array minimum length attribute
+  # Test keys array minimum length attribute
   
   def test_less_keys_than_min_length
     keys = []

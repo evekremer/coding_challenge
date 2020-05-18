@@ -5,11 +5,10 @@ require_relative "../test_helper"
 class MixinTest < BaseTest
   include Memcached::Mixin
 
-  ####### Test is_expired? method
+  # Test is_expired? method
 
-  # Receives only zero or Time class as valid arguments
+  #=> Receives only zero or Time class as valid arguments
 
-  # Time class
   def test_expired_time
     time = Time.now - Memcached::SECONDS_PER_DAY # yesterday
     assert is_expired? time
@@ -62,7 +61,7 @@ class MixinTest < BaseTest
     end
   end
 
-  ####### Test contains_control_characters? method
+  # Test contains_control_characters? method
 
   def test_control_char_empty_string
     refute contains_control_characters? ''
@@ -131,7 +130,7 @@ class MixinTest < BaseTest
     refute contains_control_characters? nil
   end
 
-  ####### Test is_i? method
+  # Test is_i? method
 
   def test_is_i_pos
     assert is_i? '10'
@@ -181,7 +180,7 @@ class MixinTest < BaseTest
     refute is_i? nil
   end
 
-  ####### Test is_unsigned_i? method
+  # Test is_unsigned_i? method
 
   def test_is_ui_positive
     assert is_unsigned_i? '10'
