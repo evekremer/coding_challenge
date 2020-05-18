@@ -35,12 +35,15 @@ module Memcached
     def request_handler connection
       while request_line = connection.gets
         begin
-          puts request_line
+          # Parse request line arguments
           command = validate_and_remove_ending! request_line
           command_split = command.split(/ /)
           command_name = command_split.shift
       
           no_reply = false
+          # Invoke the cache handler for the corresponding request received
+          
+          # Memcached storage command
           if STORAGE_CMDS.include? command_name
             data_block = read_data_block_request command_split[3], connection
             
@@ -51,17 +54,19 @@ module Memcached
             end
             no_reply = storage_obj.no_reply
             message = @cache_handler.storage_handler storage_obj
-
+          
+          # Memcached retrieval command
           elsif RETRIEVAL_CMDS.include? command_name
-
             retrieval_obj = RetrievalCommand.new command_name, command_split
             message = @cache_handler.retrieval_handler retrieval_obj
-            
-          else # The command name received is not supported
+          
+          # The command received is not supported
+          else
             message = INVALID_COMMAND_NAME_MSG
           end
 
-        rescue ArgumentClientError, TypeClientError => e # the input doesn't conform to the protocol
+        # The input does not conform to the protocol
+        rescue ArgumentClientError, TypeClientError => e 
           # Clear buffer if there are remaining written bytes
           if connection.ready?
             connection.read_nonblock MAX_DATA_BLOCK_LENGTH
@@ -69,13 +74,19 @@ module Memcached
           message = e.message
         end
 
+        # Send server response via connection buffer
         unless no_reply
           connection.puts message
         end
       end
-      connection.close # Disconnect from the client
+
+      # Disconnect from the client
+      connection.close
     end
 
+    # Read data block lines received from 'connection' buffer
+    #   Until data block length is greater-than or equal-to the given 'length'
+    #   (excluding command termination)
     def read_data_block_request length, connection
       data_block = ""
       while line = connection.gets
@@ -86,6 +97,8 @@ module Memcached
       validate_and_remove_ending! data_block
     end
 
+    # Purge expired keys stored into memcache
+    # Within a frequency of <PURGE_EXPIRED_KEYS_FREQUENCY_SECS> seconds
     def purge_expired_keys
       Thread.new{
         loop{

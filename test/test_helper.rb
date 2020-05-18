@@ -2,6 +2,7 @@ require_relative "../lib/memcached/mixin"
 require_relative "../lib/memcached/commands/retrieval"
 require_relative "../lib/memcached/commands/storage"
 require_relative "../lib/memcached/commands/cas"
+require_relative '../lib/memcached/safe_sync'
 require_relative "../lib/memcached/cache_handler"
 require_relative '../lib/memcached/doubly_linked_list'
 require_relative "../lib/memcached/lru_cache"
@@ -111,7 +112,7 @@ class BaseTest < Test::Unit::TestCase
   end
 
   def wait_for_purge_exec
-    sleep(Memcached::PURGE_EXPIRED_KEYS_FREQUENCY_SECS+2)
+    sleep(Memcached::PURGE_EXPIRED_KEYS_FREQUENCY_SECS + 2)
   end
 
   def data_to_hash key, flags, expdate, length, cas_key, data_block

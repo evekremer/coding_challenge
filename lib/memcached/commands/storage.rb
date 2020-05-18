@@ -22,20 +22,24 @@ module Memcached
 
     private
 
-    # Determine the expiration date corresponding to the <exptime> parameter received
+    # Determine the expiration date corresponding to the <exptime> parameter
     def expiration_date exptime
       validate_exptime! exptime
 
       expt = exptime.to_i
       case
-      when expt == 0 # Never expires 
+      when expt == 0  
+        # Never expires
         expdate = 0
-      when expt < 0 # Immediately expired
+      when expt < 0
+        # Immediately expired
         expdate = Time.now
       when expt <= 30 * SECONDS_PER_DAY
-        expdate = Time.now + expt # Offset from current time
+        # Offset from current time
+        expdate = Time.now + expt 
       else
-        expdate = UNIX_TIME + expt # Offset from 1/1/1970 (Unix time)
+        # Offset from 1/1/1970 (Unix time)
+        expdate = UNIX_TIME + expt 
       end
       expdate
     end

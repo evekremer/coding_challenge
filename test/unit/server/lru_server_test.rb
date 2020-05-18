@@ -33,6 +33,17 @@ class LruServerTest < BaseTest
     @@lru_key = "#{KEY}#{@@i}"
   end
 
+  # Assert current least-recently used item is properly stored
+  def check_current_lru
+    update_lru_key
+
+    send_get_cmd @@lru_key
+    expected_reply = expected_get_response @@lru_key, flags, DATA_BLOCK.length, DATA_BLOCK
+    assert_equal expected_reply, read_reply(3)
+
+    update_lru_key
+  end
+
   #### Set command
 
   def test_lru_set
@@ -42,14 +53,7 @@ class LruServerTest < BaseTest
     send_get_cmd @@lru_key
     assert_equal Memcached::END_MSG, read_reply
 
-    # Check the current least-recently used item is stored
-    update_lru_key
-
-    send_get_cmd @@lru_key
-    expected_reply = expected_get_response @@lru_key, flags, DATA_BLOCK.length, DATA_BLOCK
-    assert_equal expected_reply, read_reply(3)
-
-    update_lru_key
+    check_current_lru
   end
 
   #### Get command
@@ -66,14 +70,7 @@ class LruServerTest < BaseTest
     send_get_cmd @@lru_key
     assert_equal Memcached::END_MSG, read_reply
 
-    # Check the current least-recently used item is stored
-    update_lru_key
-
-    send_get_cmd @@lru_key
-    expected_reply = expected_get_response @@lru_key, flags, DATA_BLOCK.length, DATA_BLOCK
-    assert_equal expected_reply, read_reply(3)
-
-    update_lru_key
+    check_current_lru
   end
 
   def test_get_not_lru
@@ -89,14 +86,7 @@ class LruServerTest < BaseTest
     send_get_cmd @@lru_key
     assert_equal Memcached::END_MSG, read_reply
 
-    # Check the current least-recently used item is stored
-    update_lru_key
-
-    send_get_cmd @@lru_key
-    expected_reply = expected_get_response @@lru_key, flags, DATA_BLOCK.length, DATA_BLOCK
-    assert_equal expected_reply, read_reply(3)
-
-    update_lru_key
+    check_current_lru
   end
 
   #### Append command
@@ -108,14 +98,7 @@ class LruServerTest < BaseTest
     send_get_cmd @@lru_key
     assert_equal Memcached::END_MSG, read_reply
 
-    # Check the current least-recently used item is stored
-    update_lru_key
-
-    send_get_cmd @@lru_key
-    expected_reply = expected_get_response @@lru_key, flags, DATA_BLOCK.length, DATA_BLOCK
-    assert_equal expected_reply, read_reply(3)
-
-    update_lru_key
+    check_current_lru
   end
 
   #### Replace command
@@ -128,13 +111,6 @@ class LruServerTest < BaseTest
     send_get_cmd @@lru_key
     assert_equal Memcached::END_MSG, read_reply
 
-    # Check the current least-recently used item is stored
-    update_lru_key
-
-    send_get_cmd @@lru_key
-    expected_reply = expected_get_response @@lru_key, flags, DATA_BLOCK.length, DATA_BLOCK
-    assert_equal expected_reply, read_reply(3)
-
-    update_lru_key
+    check_current_lru
   end
 end
