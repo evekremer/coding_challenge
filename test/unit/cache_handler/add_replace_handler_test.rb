@@ -1,15 +1,15 @@
-require_relative "../../test_helper"
+# frozen_string_literal: true
+
+require_relative 'cache_handler_helper'
 
 # Test add_replace method for CacheHandler class
 class AddReplaceHandlerTest < BaseTest
   def setup
-    @cache_handler = Memcached::CacheHandler.new
-    
-    parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
+    parameters = [key.to_s, flags.to_s, exptime.to_s, data_block.length.to_s]
     @set_storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
 
-    data_block = 'add_replace'
-    parameters = ["#{key}", "#{flags+1}", "#{exptime+100}", "#{data_block.length}"]
+    @data_block = 'add_replace'
+    @parameters = [key.to_s, (flags + 1).to_s, (exptime + 100).to_s, data_block.length.to_s]
     @add_storage_obj = Memcached::StorageCommand.new Memcached::ADD_CMD_NAME, parameters, data_block
     @replace_storage_obj = Memcached::StorageCommand.new Memcached::REPLACE_CMD_NAME, parameters, data_block
   end
@@ -17,11 +17,11 @@ class AddReplaceHandlerTest < BaseTest
   # Add
 
   def test_simple_add
-    reply = @cache_handler.storage_handler @add_storage_obj
+    reply = @cache_handler.storage_handler Memcached::ADD_CMD_NAME, @parameters, @data_block
     assert_equal Memcached::STORED_MSG, reply
 
-    expected_get = data_to_hash @add_storage_obj.key, @add_storage_obj.flags, @add_storage_obj.expdate, @add_storage_obj.length, @cache_handler.cas_key, @add_storage_obj.data_block
-    assert_equal expected_get, @cache_handler.cache.get(@add_storage_obj.key)
+    expected_get = data_to_hash key, flags, expdate, length, @cache_handler.cas_key, @data_block
+    assert_equal expected_get, @cache_handler.cache.get(key)
   end
 
   def test_invalid_add
@@ -36,7 +36,7 @@ class AddReplaceHandlerTest < BaseTest
 
   def test_empty_add
     data_block = ''
-    parameters = ["#{key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
+    parameters = [key.to_s, flags.to_s, exptime.to_s, data_block.length.to_s]
     storage_obj_empty = Memcached::StorageCommand.new Memcached::ADD_CMD_NAME, parameters, data_block
     reply = @cache_handler.storage_handler storage_obj_empty
     assert_equal Memcached::STORED_MSG, reply
@@ -66,9 +66,9 @@ class AddReplaceHandlerTest < BaseTest
 
   def test_empty_replace
     @cache_handler.storage_handler @set_storage_obj
-    
+
     data_block = ''
-    parameters = ["#{@set_storage_obj.key}", "#{flags}", "#{exptime}", "#{data_block.length}"]
+    parameters = [@set_storage_obj.key.to_s, flags.to_s, exptime.to_s, data_block.length.to_s]
     storage_obj_empty = Memcached::StorageCommand.new Memcached::REPLACE_CMD_NAME, parameters, data_block
     reply = @cache_handler.storage_handler storage_obj_empty
     assert_equal Memcached::STORED_MSG, reply

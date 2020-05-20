@@ -1,15 +1,17 @@
-require_relative "../../test_helper"
+# frozen_string_literal: true
 
-# Test that inserts with full cache cause older data to be purged in least recently used (LRU) order
+require_relative 'server_test_helper'
+
 # Unit test for Memcached::Server class
+
+# Test that inserts with full cache cause older data to be purged
+# in least recently used (LRU) order
 class LruServerTest < BaseTest
   DATA_BLOCK = 'd' * (Memcached::MAX_DATA_BLOCK_LENGTH / 2)
   KEY = 'key'
 
-  def self.send_storage_cmd cmd_name, key, flags, exptime, length, unique_cas_key, value, noreply = false
-    request = "#{cmd_name} #{key} #{flags} #{exptime} #{length}"
-    request += " #{unique_cas_key}" if unique_cas_key
-    request += " #{Memcached::NO_REPLY}" if noreply
+  def self.send_storage_cmd(cmd_name, key, flags, exptime, value)
+    request = "#{cmd_name} #{key} #{flags} #{exptime} #{value.length}"
     request += Memcached::CMD_ENDING
 
     @socket.puts request
@@ -17,17 +19,18 @@ class LruServerTest < BaseTest
   end
 
   def self.startup
-    @socket = TCPSocket.open( "localhost", 9999 )
+    @socket = TCPSocket.open('localhost', 9999)
     # Reach maximum cache capacity
-    ((Memcached::MAX_CACHE_CAPACITY/Memcached::MAX_DATA_BLOCK_LENGTH) * 2).times{ |n|
-      self.send_storage_cmd Memcached::SET_CMD_NAME, "#{KEY}#{n}", 5, 300, DATA_BLOCK.length, false, DATA_BLOCK, true
-    }
+    t = (Memcached::MAX_CACHE_CAPACITY / Memcached::MAX_DATA_BLOCK_LENGTH) * 2
+    t.times do |n|
+      send_storage_cmd Memcached::SET_CMD_NAME, "#{KEY}#{n}", 5, 300, DATA_BLOCK
+    end
     @socket.close
   end
 
   @@i = 0
   @@lru_key = "#{KEY}#{@@i}"
-  
+
   def update_lru_key
     @@i += 1
     @@lru_key = "#{KEY}#{@@i}"
@@ -58,7 +61,7 @@ class LruServerTest < BaseTest
 
   #### Get command
 
-  def get_lru
+  def test_get_lru
     # Fetch @@lru_key: causes @@lru_key to be the current most-recently used
     send_get_cmd @@lru_key
     read_reply(3)
@@ -66,7 +69,7 @@ class LruServerTest < BaseTest
 
     # Reach maximum capacity by setting 'key', causing @@lru_key to be evicted
     send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, DATA_BLOCK.length, false, DATA_BLOCK, true
-    
+
     send_get_cmd @@lru_key
     assert_equal Memcached::END_MSG, read_reply
 

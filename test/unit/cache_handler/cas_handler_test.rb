@@ -1,32 +1,32 @@
-require_relative "../../test_helper"
+# frozen_string_literal: true
+
+require_relative 'cache_handler_helper'
 
 # Test cas method for CacheHandler class
 class CasHandlerTest < BaseTest
   def setup
-    @cache_handler = Memcached::CacheHandler.new
-    
     exptime_ = exptime
-    parameters = ["#{key}", "#{flags}", "#{exptime_}", "#{data_block.length}"]
+    parameters = [key.to_s, flags.to_s, exptime_.to_s, data_block.length.to_s]
     @set_storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
     @cache_handler.storage_handler @set_storage_obj
 
     # Different parameters except for 'key' as @set_storage_obj
     data_block = 'cas_data_block_1'
-    parameters = ["#{key}", "#{flags+1}", "#{exptime_+100}", "#{data_block.length}", "#{@cache_handler.cas_key}"]
+    parameters = [key.to_s, (flags + 1).to_s, (exptime_ + 100).to_s, data_block.length.to_s, @cache_handler.cas_key.to_s]
     @cas_obj_stored = Memcached::CasCommand.new parameters, data_block
 
     # Different cas_key (only) from @cas_obj_stored
-    parameters = ["#{key}", "#{flags+1}", "#{exptime_+100}", "#{data_block.length}", "#{@cache_handler.cas_key+7}"]
+    parameters = [key.to_s, (flags + 1).to_s, (exptime_ + 100).to_s, data_block.length.to_s, (@cache_handler.cas_key + 7).to_s]
     @cas_obj_exists = Memcached::CasCommand.new parameters, data_block
 
     # Different parameteres from @set_storage_obj
     data_block = 'cas_data_block_2'
-    parameters = ["#{key}_", "#{flags+4}", "#{exptime_+200}", "#{data_block.length}", "#{@cache_handler.cas_key}"]
+    parameters = ["#{key}_", (flags + 4).to_s, (exptime_ + 200).to_s, data_block.length.to_s, @cache_handler.cas_key.to_s]
     @cas_obj_not_found = Memcached::CasCommand.new parameters, data_block
 
     # Same parameters as cas_obj_stored, but with empty data_block
     data_block = ''
-    parameters = ["#{key}", "#{flags+1}", "#{exptime_+100}", "#{data_block.length}", "#{@cache_handler.cas_key}"]
+    parameters = [key.to_s, (flags + 1).to_s, (exptime_ + 100).to_s, data_block.length.to_s, @cache_handler.cas_key.to_s]
     @cas_obj_empty = Memcached::CasCommand.new parameters, data_block
   end
 

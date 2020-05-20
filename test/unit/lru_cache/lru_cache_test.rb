@@ -1,4 +1,6 @@
-require_relative "../../test_helper"
+# frozen_string_literal: true
+
+require_relative '../../test_helper'
 
 # Test Memcached::LRUCache class
 class LRUCacheTest < BaseTest
@@ -8,37 +10,37 @@ class LRUCacheTest < BaseTest
     @lru_cache = Memcached::LRUCache.new MAX_CAPACITY
 
     @cas_key = cas_key
-    @expdate = Time.new(2021,1,1)
-    @flags = "#{flags}"
-    @data_block = "#{data_block}"
-    @length = "#{data_block.length}"
+    @expdate = Time.new(2021, 1, 1)
+    @flags = flags.to_s
+    @data_block = data_block.to_s
+    @length = data_block.length.to_s
 
     t = 10
     @full_cache = Memcached::LRUCache.new data_block.length * t
-    @full_cache_keys = Array.new
-    t.times{ |i|
+    @full_cache_keys = []
+    t.times do |i|
       @full_cache_keys[i] = "#{key}#{i}"
       @full_cache.store "#{key}#{i}", @flags, @expdate, @length, @cas_key, @data_block
-    }
+    end
 
     @lru_key_index = 0
     @lru_key = @full_cache_keys[@lru_key_index]
-  end  
+  end
 
   def update_lru_key
     @lru_key_index += 1
     @lru_key = @full_cache_keys[@lru_key_index]
   end
 
-  def contains_expected_keys cache, keys
+  def contains_expected_keys(cache, keys)
     expected_keys = true
     keys.each do |iter_key|
-      expected_keys &= cache.has_key? iter_key
+      expected_keys &= cache.key? iter_key
     end
     expected_keys
   end
 
-  def check_curent_head_tail cache, mru_key, lru_key
+  def check_curent_head_tail(cache, mru_key, lru_key)
     # Most recently-used key
     check = cache.lru_linked_list.head.data[:key] == mru_key
     # Least recently-used key
@@ -66,9 +68,9 @@ class LRUCacheTest < BaseTest
 
   def test_store_empty
     data_block = ''
-    length = "#{data_block.length}"
+    length = data_block.length.to_s
     @lru_cache.store key, @flags, @expdate, length, @cas_key, data_block
-    
+
     expected = data_to_hash key, @flags, @expdate, length, @cas_key, data_block
 
     assert_equal expected, @lru_cache.get(key)
@@ -77,7 +79,7 @@ class LRUCacheTest < BaseTest
 
   def test_store_length_int
     @lru_cache.store key, @flags, @expdate, data_block.length, @cas_key, data_block
-    
+
     expected = data_to_hash key, @flags, @expdate, data_block.length, @cas_key, data_block
     assert_equal expected, @lru_cache.get(key)
     assert_equal data_block.length, @lru_cache.total_length_stored
@@ -85,12 +87,12 @@ class LRUCacheTest < BaseTest
 
   def test_store_full_cache
     @full_cache.store key, @flags, @expdate, @length, @cas_key, @data_block
-   
+
     # Check current LRU key is purged on new insertion into full cache
     @full_cache_keys.delete @lru_key
     assert contains_expected_keys @full_cache, @full_cache_keys + [key]
-    refute @full_cache.has_key? @lru_key
-    
+    refute @full_cache.key? @lru_key
+
     assert check_curent_head_tail @full_cache, key, @full_cache_keys[@lru_key_index]
     assert_equal @full_cache.max_capacity, @full_cache.total_length_stored
   end
@@ -102,24 +104,24 @@ class LRUCacheTest < BaseTest
 
     # Reach max cache capacity
     data_block = 'd' * 2
-    full_cache_keys = Array.new
-    
-    (max_capacity/data_block.length).times{ |i|
+    full_cache_keys = []
+
+    (max_capacity / data_block.length).times do |i|
       full_cache_keys[i] = "#{key}#{i}"
       full_cache.store "#{key}#{i}", flags, expdate, data_block.length, @cas_key, data_block
-    }
+    end
 
-    data_block = data_block * 3
+    data_block *= 3
     full_cache.store key, flags, expdate, data_block.length, @cas_key, data_block
-   
+
     # Check current LRU key is purged on new insertion into full cache
-    3.times{ |i| full_cache_keys.delete "#{key}#{i}" }
+    3.times { |i| full_cache_keys.delete "#{key}#{i}" }
     assert contains_expected_keys full_cache, full_cache_keys + [key]
-    
+
     has_lru_keys = true
-    3.times{ |i| has_lru_keys &= full_cache.has_key? "#{key}#{i}" }
+    3.times { |i| has_lru_keys &= full_cache.key? "#{key}#{i}" }
     refute has_lru_keys
-    
+
     assert check_curent_head_tail full_cache, key, full_cache_keys[0]
     assert full_cache.max_capacity >= full_cache.total_length_stored
   end
@@ -141,13 +143,13 @@ class LRUCacheTest < BaseTest
     # Fetch least-recently used key
     @full_cache.get @lru_key
     update_lru_key
-    
+
     @full_cache.store key, @flags, @expdate, @length, @cas_key, @data_block
 
     # Check current LRU key is purged on new insertion into full cache
     @full_cache_keys.delete @lru_key
     assert contains_expected_keys @full_cache, @full_cache_keys + [key]
-    refute @full_cache.has_key? @lru_key
+    refute @full_cache.key? @lru_key
 
     assert check_curent_head_tail @full_cache, key, @full_cache_keys[@lru_key_index]
   end

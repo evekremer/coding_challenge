@@ -1,4 +1,6 @@
-require_relative "../../test_helper"
+# frozen_string_literal: true
+
+require_relative 'server_test_helper'
 
 # Unit test for Memcached::Server class
 class ServerConcurrencyTest < BaseTest
@@ -33,21 +35,21 @@ class ServerConcurrencyTest < BaseTest
     Array.new(10) do |n|
       Thread.new do
         s = socket
-        keys = ""
+        keys = ''
         # Set 20 items with (key, value) = (test#{n}#{i}, v#{n})
-        20.times { |i|
+        20.times do |i|
           s.puts "#{Memcached::SET_CMD_NAME} test#{n}_#{i} #{flags} #{exptime} #{"v#{n}".length}#{Memcached::CMD_ENDING}"
           s.puts "v#{n}#{Memcached::CMD_ENDING}"
           assert_equal Memcached::STORED_MSG, s.gets
           keys += " test#{n}_#{i}"
-        }
+        end
 
         # Get all the previously set keys
-        s.puts "#{Memcached::GET_CMD_NAME}" + keys + "#{Memcached::CMD_ENDING}"
-        20.times { |i|
+        s.puts Memcached::GET_CMD_NAME.to_s + keys + Memcached::CMD_ENDING.to_s
+        20.times do |i|
           assert_equal "#{Memcached::VALUE_LABEL}test#{n}_#{i} #{flags} #{"v#{n}".length}#{Memcached::CMD_ENDING}", s.gets
           assert_equal "v#{n}#{Memcached::CMD_ENDING}", s.gets
-        }
+        end
         assert_equal Memcached::END_MSG, s.gets
       end
     end.each(&:join)

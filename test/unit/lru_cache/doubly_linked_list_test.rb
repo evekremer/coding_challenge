@@ -1,4 +1,6 @@
-require_relative "../../test_helper"
+# frozen_string_literal: true
+
+require_relative '../../test_helper'
 
 # Test DoublyLinkedList class
 class DoublyLinkedListTest < BaseTest
@@ -6,16 +8,16 @@ class DoublyLinkedListTest < BaseTest
     @empty_list = DoublyLinkedList.new
 
     @linked_list = DoublyLinkedList.new
-    @data = Array.new
-    10.times{ |i|
-      @data[i] = {key: "#{key}#{i}", value: "#{value}#{i}"}
+    @data = []
+    10.times do |i|
+      @data[i] = { key: "#{key}#{i}", value: "#{value}#{i}" }
       @linked_list.insert_new_head @data[i]
-    }
+    end
     @data.reverse!
   end
 
   # Loops over the list and compares items with 'data' one by one
-  def validate_each list, data
+  def validate_each(list, data)
     current = list.head
     i = 0
     expected_data = true
@@ -27,23 +29,23 @@ class DoublyLinkedListTest < BaseTest
     expected_data
   end
 
-  def validate_prev_next_head node
+  def validate_prev_next_head(node)
     !node.prev && node.next
   end
 
   ## Test insert_new_head
 
   def test_insert_new_data_first_element
-    new_data = {key: key, value: value}
+    new_data = { key: key, value: value }
     @empty_list.insert_new_head new_data
-    
+
     assert_equal @empty_list.head, @empty_list.tail
     assert_nil @empty_list.head.next
     assert_nil @empty_list.head.prev
   end
 
   def test_insert_new_data_list
-    new_data = {key: key, value: value}
+    new_data = { key: key, value: value }
     new_head_node = @linked_list.insert_new_head new_data
 
     assert validate_prev_next_head new_head_node
@@ -60,7 +62,7 @@ class DoublyLinkedListTest < BaseTest
     new_head_node = @linked_list.insert_head tail_node
 
     assert validate_prev_next_head new_head_node
-    
+
     assert validate_each @linked_list, [@data[-1]] + @data[0..-2]
   end
 
@@ -101,7 +103,7 @@ class DoublyLinkedListTest < BaseTest
   def test_remove_list
     # Remove the second element of the list
     node = @linked_list.head.next
-    removed_node = @linked_list.remove node
+    @linked_list.remove node
     @data.delete node.data
 
     assert validate_each @linked_list, @data
@@ -109,7 +111,7 @@ class DoublyLinkedListTest < BaseTest
 
   def test_remove_list_head
     node = @linked_list.head
-    removed_node = @linked_list.remove node
+    @linked_list.remove node
     @data.delete node.data
 
     assert validate_each @linked_list, @data
@@ -117,7 +119,7 @@ class DoublyLinkedListTest < BaseTest
 
   def test_remove_list_tail
     node = @linked_list.tail
-    removed_node = @linked_list.remove node
+    @linked_list.remove node
     @data.delete node.data
 
     assert validate_each @linked_list, @data

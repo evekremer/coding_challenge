@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative './memcached/mixin'
 require_relative './memcached/commands/storage'
 require_relative './memcached/commands/cas'
@@ -9,6 +11,6 @@ require_relative './memcached/lru_cache'
 require 'socket'
 require_relative './memcached/server'
 
-socket_address = ARGV[0] || "0.0.0.0" # any client anywhere can connect
+socket_address = ARGV[0] || '0.0.0.0' # any client anywhere can connect
 socket_port = ARGV[1] || 9999
 Memcached::Server.new socket_address, socket_port

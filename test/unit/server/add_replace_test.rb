@@ -1,138 +1,98 @@
-# "add": means "store this data, but only if the server *doesn't* already hold data for this key".
-# "replace" means "store this data, but only if the server *does* already hold data for this key".
+# frozen_string_literal: true
 
-require_relative "../../test_helper"
+# "add": means "store this data,
+#       but only if the server *doesn't* already hold data for this key".
+# "replace" means "store this data,
+#       but only if the server *does* already hold data for this key".
+
+require_relative 'server_test_helper'
 
 # Unit test for Memcached::Server class
 class ServerAddReplaceTest < BaseTest
-
   ###########     Add     ###########
 
+  def assert_send_add(key, flags, exptime, value, msg = Memcached::STORED_MSG, length = value.length)
+    send_storage_cmd Memcached::ADD_CMD_NAME, key, flags, exptime, length, value
+    assert_equal msg, read_reply
+  end
+
   def test_simple_add
-    send_storage_cmd Memcached::ADD_CMD_NAME, key, flags, exptime, value.length, false, value, false
-    assert_equal Memcached::STORED_MSG, read_reply
-    
-    send_get_cmd key
-    expected_msg = expected_get_response key, flags, value.length, value
-    assert_equal expected_msg, read_reply(3)
+    assert_send_add key, flags, exptime, value
+    assert_multine_get key, flags, value
   end
 
   def test_existing_key_add
-    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false
-    assert_equal Memcached::STORED_MSG, read_reply
-
-    new_flags = flags + 1
-    send_storage_cmd Memcached::ADD_CMD_NAME, key, new_flags, exptime, new_value.length, false, new_value, false
-    assert_equal Memcached::NOT_STORED_MSG, read_reply
-
-    send_get_cmd key
-    expected_get_msg = expected_get_response key, flags, value.length, value
-    assert_equal expected_get_msg, read_reply(3)
+    assert_send_set key, flags, exptime, value
+    assert_send_add key, (flags + 1), exptime, new_value, Memcached::NOT_STORED_MSG
+    assert_multine_get key, flags, value
   end
 
   def test_exptime_add
-    exptime = 3
-    send_storage_cmd Memcached::ADD_CMD_NAME, key, flags, exptime, value.length, false, value, false
-    assert_equal Memcached::STORED_MSG, read_reply
+    assert_send_add key, flags, 3, value
 
-    send_get_cmd key
-    expected_get_msg = expected_get_response key, flags, value.length, value
-    assert_equal expected_get_msg, read_reply(3)
-
+    assert_multine_get key, flags, value
     wait_for_purge_exec
-
-    send_get_cmd key
-    assert_equal Memcached::END_MSG, read_reply
+    assert_get key, Memcached::END_MSG
   end
 
   def test_expired_add
-    exptime = -1
-    send_storage_cmd Memcached::ADD_CMD_NAME, key, flags, exptime, value.length, false, value, false
-    assert_equal Memcached::STORED_MSG, read_reply
-
-    send_get_cmd key
-    assert_equal Memcached::END_MSG, read_reply
+    assert_send_add key, flags, -1, value
+    assert_get key, Memcached::END_MSG
   end
 
   def test_no_reply_add
-    no_reply = true
-    send_storage_cmd Memcached::ADD_CMD_NAME, key, flags, exptime, value.length, false, value, no_reply
-
-    send_get_cmd key
-    expected_get_msg = expected_get_response key, flags, value.length, value
-    assert_equal expected_get_msg, read_reply(3)
+    send_storage_cmd Memcached::ADD_CMD_NAME, key, flags, exptime, value.length, value, true
+    assert_multine_get key, flags, value
   end
 
   ###########     Replace     ###########
 
+  def assert_send_replace(key, flags, exptime, value, msg = Memcached::STORED_MSG, length = value.length)
+    send_storage_cmd Memcached::REPLACE_CMD_NAME, key, flags, exptime, length, value
+    assert_equal msg, read_reply
+  end
+
   def test_simple_replace
-    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, 100, value.length, false, value, false
-    assert_equal Memcached::STORED_MSG, read_reply
+    assert_send_set key, flags, exptime, value
 
     new_flags = flags + 6
-    send_storage_cmd Memcached::REPLACE_CMD_NAME, key, new_flags, 6000, new_value.length, false, new_value, false
-    assert_equal Memcached::STORED_MSG, read_reply
+    assert_send_replace key, new_flags, exptime, new_value
 
     # Get stored item with updated value
-    send_get_cmd key
-    expected_get_msg = expected_get_response key, new_flags, new_value.length, new_value
-    assert_equal expected_get_msg, read_reply(3)
+    assert_multine_get key, new_flags, new_value
   end
 
   def test_missing_key_replace
-    send_storage_cmd Memcached::REPLACE_CMD_NAME, key, 5, 6000, value.length, false, value, false
-    assert_equal Memcached::NOT_STORED_MSG, read_reply
-
-    send_get_cmd key
-    assert_equal Memcached::END_MSG, read_reply
+    assert_send_set key, flags, exptime, value, Memcached::NOT_STORED_MSG
+    assert_get key, Memcached::END_MSG
   end
 
   def test_exptime_replace
     # Set item that never expires
-    exptime = 0
-    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false
-    assert_equal Memcached::STORED_MSG, read_reply
+    assert_send_set key, flags, 0, value
 
     # Replace for item that expires in 3 seconds
     new_flags = flags + 3
-    exptime = 3
-    send_storage_cmd Memcached::REPLACE_CMD_NAME, key, new_flags, exptime, new_value.length, false, new_value, false
-    assert_equal Memcached::STORED_MSG, read_reply
+    assert_send_replace key, new_flags, 3, new_value
 
-    send_get_cmd key
-    expected_get_msg = expected_get_response key, new_flags, new_value.length, new_value
-    assert_equal expected_get_msg, read_reply(3)
-
+    assert_multine_get key, new_flags, new_value
     wait_for_purge_exec
-    
-    send_get_cmd key
-    assert_equal Memcached::END_MSG, read_reply
+    assert_get key, Memcached::END_MSG
   end
 
   def test_expired_replace
     # Set item that never expires
-    exptime = 0
-    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false
-    assert_equal Memcached::STORED_MSG, read_reply
+    assert_send_set key, flags, 0, value
 
     # Replace for item that immediatelly expires
-    exptime = -1
-    send_storage_cmd Memcached::REPLACE_CMD_NAME, key, flags, exptime, value.length, false, value, false
-    assert_equal Memcached::STORED_MSG, read_reply
+    assert_send_replace key, flags, -1, value
 
-    send_get_cmd key
-    assert_equal Memcached::END_MSG, read_reply
+    assert_get key, Memcached::END_MSG
   end
 
   def test_no_reply_replace
-    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, false
-    assert_equal Memcached::STORED_MSG, read_reply
-
-    no_reply = true
-    send_storage_cmd Memcached::REPLACE_CMD_NAME, key, flags, exptime, new_value.length, false, new_value, no_reply
-
-    send_get_cmd key
-    expected_get_msg = expected_get_response key, flags, new_value.length, new_value
-    assert_equal expected_get_msg, read_reply(3)
+    assert_send_set key, flags, exptime, value
+    send_storage_cmd Memcached::REPLACE_CMD_NAME, key, flags, exptime, new_value.length, new_value, true
+    assert_multine_get key, flags, new_value
   end
 end

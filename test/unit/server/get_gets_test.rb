@@ -1,28 +1,29 @@
-require_relative "../../test_helper"
+# frozen_string_literal: true
+
+require_relative 'server_test_helper'
 
 # Unit test for Memcached::Server class
 class ServerGetGetsTest < BaseTest
-
   ###########     Get     ###########
 
   def test_simple_multi_get
-    expected_reply = ""
-    keys = Array.new
+    expected_reply = ''
+    keys = []
 
     # Set multiple values
-    10.times{ |i|
+    10.times do |i|
       key = "#{key}#{i}"
       send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, true
       expected_reply += expected_get_response key, flags, value.length, value, false, true
       keys[i] = key
-    }
+    end
     expected_reply += Memcached::END_MSG
 
     # Get multiple values for stored keys
     send_get_multi_keys keys
     assert_equal expected_reply, read_reply((keys.length * 2) + 1)
   end
-  
+
   def test_get_empty_key
     key = ''
     send_get_cmd key
@@ -36,17 +37,17 @@ class ServerGetGetsTest < BaseTest
   end
 
   def test_all_empty_value_multi_get
-    expected_reply = ""
-    keys = Array.new
+    expected_reply = ''
+    keys = []
     value = ''
 
     # Set multiple empty values
-    10.times{ |i|
+    10.times do |i|
       key = "#{key}#{i}"
       send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, true
       expected_reply += expected_get_response key, flags, value.length, value, false, true
       keys[i] = key
-    }
+    end
     expected_reply += Memcached::END_MSG
 
     # Get multiple empty values for stored keys
@@ -86,16 +87,16 @@ class ServerGetGetsTest < BaseTest
   ###########     Gets     ###########
 
   def test_simple_multi_gets
-    expected_reply = ""
-    keys = Array.new
+    expected_reply = ''
+    keys = []
 
     # Set multiple values
-    10.times{ |i|
+    10.times do |i|
       key = "#{key}#{i}"
       send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, true
       expected_reply += expected_get_response key, flags, value.length, value, get_cas_key(key), true
       keys[i] = key
-    }
+    end
     expected_reply += Memcached::END_MSG
 
     # Get multiple values for stored keys
@@ -116,17 +117,17 @@ class ServerGetGetsTest < BaseTest
   end
 
   def test_all_empty_value_multi_gets
-    expected_reply = ""
-    keys = Array.new
+    expected_reply = ''
+    keys = []
     value = ''
 
     # Set multiple empty values
-    10.times{ |i|
+    10.times do |i|
       key = "#{key}#{i}"
       send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, true
       expected_reply += expected_get_response key, flags, value.length, value, get_cas_key(key), true
       keys[i] = key
-    }
+    end
     expected_reply += Memcached::END_MSG
 
     # Gets multiple empty values for stored keys

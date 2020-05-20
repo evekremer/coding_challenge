@@ -1,69 +1,63 @@
+# frozen_string_literal: true
+
 module Memcached
+  # Storage command
   class StorageCommand
     include Mixin
 
-    attr_reader :key, :flags, :expdate, :length, :data_block, :no_reply, :command_name, :parameters_max_length
+    attr_reader :key, :flags, :expdate, :length, :data_block, :no_reply
+    attr_reader :command_name, :parameters_max_length
 
-    def initialize command_name, parameters, data_block, parameters_max_length = STORAGE_CMD_PARAMETERS_MAX_LENGTH
+    def initialize(command_name, parameters, data_block,
+                   parameters_max_length = STORAGE_CMD_PARAMETERS_MAX_LENGTH)
       @command_name = command_name.to_s
       raise ArgumentError unless STORAGE_CMDS.include? command_name
 
-      # max_length: number of maximum parameters expected (excluding command name)
+      # max_length: number of max parameters expected (excluding command name)
       @parameters_max_length = parameters_max_length.to_i
       validate_number_of_parameters! parameters
 
       @key, @flags, exptime, @length = parameters
       @data_block = data_block.to_s
       validate_parameters!
-      
+
       @expdate = expiration_date exptime
-      @no_reply = has_no_reply? parameters
+      @expdate = @expdate.round
+      @no_reply = no_reply? parameters
     end
 
     private
 
     # Determine the expiration date corresponding to the <exptime> parameter
-    def expiration_date exptime
+    def expiration_date(exptime)
       validate_exptime! exptime
 
       expt = exptime.to_i
-      case
-      when expt == 0  
-        # Never expires
-        expdate = 0
-      when expt < 0
-        # Immediately expired
-        expdate = Time.now
-      when expt <= 30 * SECONDS_PER_DAY
-        # Offset from current time
-        expdate = Time.now + expt 
-      else
-        # Offset from 1/1/1970 (Unix time)
-        expdate = UNIX_TIME + expt 
-      end
-      expdate
+      return 0 if expt.zero? # Never expires
+      return Time.now if expt.negative? # Immediately expired
+
+      # Offset from current time
+      return (Time.now + expt) if expt <= 30 * SECONDS_PER_DAY
+      return (UNIX_TIME + expt) if expt > 30 * SECONDS_PER_DAY
+
+      nil
     end
 
     # Determine if the optional NO_REPLY parameter is included in command
-    def has_no_reply? parameters
-      no_reply = false
-      if parameters.length == @parameters_max_length
-        
-        no_reply_received = parameters[@parameters_max_length-1]
-        
-        if no_reply_received == NO_REPLY
-          no_reply = true
-        else
-          raise ArgumentClientError, (no_reply_syntax_error_msg no_reply_received, parameters_max_length)
-        end
+    def no_reply?(parameters)
+      return false unless parameters.length == @parameters_max_length
 
-      end
-      no_reply
+      no_reply = parameters[@parameters_max_length - 1]
+      return true if no_reply == NO_REPLY
+
+      error_msg = no_reply_syntax_error_msg no_reply, parameters_max_length
+      raise ArgumentClientError, error_msg
     end
 
-    def validate_number_of_parameters! parameters
+    def validate_number_of_parameters!(parameters)
       raise TypeError unless parameters.is_a? Array
-      validate_parameters_min_length! parameters, parameters_max_length-1
+
+      validate_parameters_min_length! parameters, parameters_max_length - 1
       validate_parameters_max_length! parameters, parameters_max_length
     end
 
