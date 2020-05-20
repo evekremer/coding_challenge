@@ -3,109 +3,96 @@
 require_relative 'cache_handler_helper'
 
 # Test pre_append method for CacheHandler class
-class PreAppendHandlerTest < BaseTest
-  def setup
-    parameters = [key.to_s, flags.to_s, exptime.to_s, data_block.length.to_s]
-    @set_storage_obj = Memcached::StorageCommand.new Memcached::SET_CMD_NAME, parameters, data_block
-    @cache_handler.storage_handler @set_storage_obj
-
-    data_block = 'pre_append'
-    parameters = [key.to_s, (flags + 2).to_s, (exptime + 200).to_s, data_block.length.to_s]
-    @prepend_storage_obj = Memcached::StorageCommand.new Memcached::PREPEND_CMD_NAME, parameters, data_block
-    @append_storage_obj = Memcached::StorageCommand.new Memcached::APPEND_CMD_NAME, parameters, data_block
-  end
-
+class PreAppendHandlerTest < CacheHandlerHelper
   # Prepend
 
   def test_simple_prepend
-    reply = @cache_handler.storage_handler @prepend_storage_obj
-    assert_equal Memcached::STORED_MSG, reply
+    parameters = [key.to_s, flags.to_s, 100, data_block.length.to_s]
+    assert_new_storage Memcached::SET_CMD_NAME, parameters, data_block
 
-    new_data_block = @prepend_storage_obj.data_block + @set_storage_obj.data_block
-    expected_get = data_to_hash @set_storage_obj.key, @set_storage_obj.flags, @set_storage_obj.expdate, new_data_block.length.to_s, @cache_handler.cas_key, new_data_block
-    assert_equal expected_get, @cache_handler.cache.get(@prepend_storage_obj.key)
+    parameters = [key.to_s, flags.to_s, 100, new_value.length.to_s]
+    assert_new_storage Memcached::PREPEND_CMD_NAME, parameters, new_value
+
+    parameters = [key.to_s, flags.to_s, 100, (new_value + data_block).length.to_s]
+    assert_get_storage parameters, (new_value + data_block)
   end
 
   def test_missing_key_prepend
     parameters = [key.to_s, flags.to_s, exptime.to_s, data_block.length.to_s]
-    prepend_storage_obj = Memcached::StorageCommand.new Memcached::PREPEND_CMD_NAME, parameters, data_block
-    reply = @cache_handler.storage_handler prepend_storage_obj
-    assert_equal Memcached::NOT_STORED_MSG, reply
-
-    assert_nil @cache_handler.cache.get(prepend_storage_obj.key)
+    assert_new_storage Memcached::PREPEND_CMD_NAME, parameters, data_block, Memcached::NOT_STORED_MSG
+    assert_nil @cache_handler.cache.get(key)
   end
 
   def test_empty_prepend
-    data_block = ''
-    parameters = [@set_storage_obj.key.to_s, flags.to_s, exptime.to_s, data_block.length.to_s]
-    storage_obj_empty = Memcached::StorageCommand.new Memcached::PREPEND_CMD_NAME, parameters, data_block
+    parameters = [key.to_s, flags.to_s, 100, data_block.length.to_s]
+    assert_new_storage Memcached::SET_CMD_NAME, parameters, data_block
 
-    reply = @cache_handler.storage_handler storage_obj_empty
-    assert_equal Memcached::STORED_MSG, reply
+    parameters = [key.to_s, flags.to_s, 100, ''.length.to_s]
+    assert_new_storage Memcached::PREPEND_CMD_NAME, parameters, ''
 
-    expected_get = data_to_hash @set_storage_obj.key, @set_storage_obj.flags, @set_storage_obj.expdate, @set_storage_obj.length, @cache_handler.cas_key, @set_storage_obj.data_block
-    assert_equal expected_get, @cache_handler.cache.get(storage_obj_empty.key)
+    parameters = [key.to_s, flags.to_s, 100, data_block.length.to_s]
+    assert_get_storage parameters, data_block
   end
 
   def test_data_block_too_long_prepend
     # Prepending the existing value exceeds max length
-    data_block = 'b' * (Memcached::MAX_DATA_BLOCK_LENGTH - @set_storage_obj.length.to_i + 1)
-    parameters = [@set_storage_obj.key.to_s, (flags + 5).to_s, (exptime + 200).to_s, data_block.length.to_s]
-    prepend_obj = Memcached::StorageCommand.new Memcached::PREPEND_CMD_NAME, parameters, data_block
+    parameters = [key.to_s, flags.to_s, 100, data_block.length.to_s]
+    assert_new_storage Memcached::SET_CMD_NAME, parameters, data_block
+
+    data_block_prepend = 'b' * (Memcached::MAX_DATA_BLOCK_LENGTH - parameters[3].to_i + 1)
+    parameters_prepend = [key.to_s, (flags + 5).to_s, 100, data_block_prepend.length.to_s]
 
     exception = assert_raise Memcached::TypeClientError do
-      @cache_handler.storage_handler prepend_obj
+      @cache_handler.new_storage Memcached::PREPEND_CMD_NAME, parameters_prepend, data_block_prepend
     end
     assert_equal Memcached::DATA_BLOCK_TOO_LONG_MSG, exception.message
 
-    expected_get = data_to_hash @set_storage_obj.key, @set_storage_obj.flags, @set_storage_obj.expdate, @set_storage_obj.length, @cache_handler.cas_key, @set_storage_obj.data_block
-    assert_equal expected_get, @cache_handler.cache.get(@set_storage_obj.key)
+    assert_get_storage parameters, data_block
   end
 
   # Append
 
   def test_simple_append
-    reply = @cache_handler.storage_handler @append_storage_obj
-    assert_equal Memcached::STORED_MSG, reply
+    parameters = [key.to_s, flags.to_s, 100, data_block.length.to_s]
+    assert_new_storage Memcached::SET_CMD_NAME, parameters, data_block
 
-    new_data_block = @set_storage_obj.data_block + @append_storage_obj.data_block
-    expected_get = data_to_hash @set_storage_obj.key, @set_storage_obj.flags, @set_storage_obj.expdate, new_data_block.length.to_s, @cache_handler.cas_key, new_data_block
-    assert_equal expected_get, @cache_handler.cache.get(@append_storage_obj.key)
+    parameters = [key.to_s, flags.to_s, 100, new_value.length.to_s]
+    assert_new_storage Memcached::APPEND_CMD_NAME, parameters, new_value
+
+    parameters = [key.to_s, flags.to_s, 100, (data_block + new_value).length.to_s]
+    assert_get_storage parameters, (data_block + new_value)
   end
 
   def test_missing_key_append
     parameters = [key.to_s, flags.to_s, exptime.to_s, data_block.length.to_s]
-    append_storage_obj = Memcached::StorageCommand.new Memcached::APPEND_CMD_NAME, parameters, data_block
-    reply = @cache_handler.storage_handler append_storage_obj
-    assert_equal Memcached::NOT_STORED_MSG, reply
-
-    assert_nil @cache_handler.cache.get(append_storage_obj.key)
+    assert_new_storage Memcached::APPEND_CMD_NAME, parameters, data_block, Memcached::NOT_STORED_MSG
+    assert_nil @cache_handler.cache.get(key)
   end
 
   def test_empty_append
-    data_block = ''
-    parameters = [@set_storage_obj.key.to_s, flags.to_s, exptime.to_s, data_block.length.to_s]
-    storage_obj_empty = Memcached::StorageCommand.new Memcached::APPEND_CMD_NAME, parameters, data_block
+    parameters = [key.to_s, flags.to_s, 100, data_block.length.to_s]
+    assert_new_storage Memcached::SET_CMD_NAME, parameters, data_block
 
-    reply = @cache_handler.storage_handler storage_obj_empty
-    assert_equal Memcached::STORED_MSG, reply
+    parameters = [key.to_s, flags.to_s, 100, ''.length.to_s]
+    assert_new_storage Memcached::APPEND_CMD_NAME, parameters, ''
 
-    expected_get = data_to_hash @set_storage_obj.key, @set_storage_obj.flags, @set_storage_obj.expdate, @set_storage_obj.length, @cache_handler.cas_key, @set_storage_obj.data_block
-    assert_equal expected_get, @cache_handler.cache.get(storage_obj_empty.key)
+    parameters = [key.to_s, flags.to_s, 100, data_block.length.to_s]
+    assert_get_storage parameters, data_block
   end
 
   def test_data_block_too_long_append
     # Appending the existing value exceeds max length
-    data_block = 'b' * (Memcached::MAX_DATA_BLOCK_LENGTH - @set_storage_obj.length.to_i + 1)
-    parameters = [@set_storage_obj.key.to_s, (flags + 5).to_s, (exptime + 200).to_s, data_block.length.to_s]
-    prepend_obj = Memcached::StorageCommand.new Memcached::APPEND_CMD_NAME, parameters, data_block
+    parameters = [key.to_s, flags.to_s, 100, data_block.length.to_s]
+    assert_new_storage Memcached::SET_CMD_NAME, parameters, data_block
+
+    data_block_append = 'b' * (Memcached::MAX_DATA_BLOCK_LENGTH - parameters[3].to_i + 1)
+    parameters_append = [key.to_s, (flags + 5).to_s, 100, data_block_append.length.to_s]
 
     exception = assert_raise Memcached::TypeClientError do
-      @cache_handler.storage_handler prepend_obj
+      @cache_handler.new_storage Memcached::APPEND_CMD_NAME, parameters_append, data_block_append
     end
     assert_equal Memcached::DATA_BLOCK_TOO_LONG_MSG, exception.message
 
-    expected_get = data_to_hash @set_storage_obj.key, @set_storage_obj.flags, @set_storage_obj.expdate, @set_storage_obj.length, @cache_handler.cas_key, @set_storage_obj.data_block
-    assert_equal expected_get, @cache_handler.cache.get(@set_storage_obj.key)
+    assert_get_storage parameters, data_block
   end
 end

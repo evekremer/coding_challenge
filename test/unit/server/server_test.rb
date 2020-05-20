@@ -3,7 +3,7 @@
 require_relative 'server_test_helper'
 
 # Unit test for Memcached::Server class
-class ServerTest < BaseTest
+class ServerTest < ServerTestHelper
   include Memcached::Mixin
 
   def test_numeric_request_line
@@ -28,7 +28,8 @@ class ServerTest < BaseTest
   end
 
   def test_invalid_termination_datablock
-    socket.puts "#{Memcached::SET_CMD_NAME} #{key} #{flags} #{exptime} #{value.length}#{Memcached::CMD_ENDING}#{value}$$"
+    socket.puts "#{Memcached::SET_CMD_NAME} #{key} #{flags} #{exptime} #{value.length}#{Memcached::CMD_ENDING}"
+    socket.puts "#{value}$$"
     assert_equal Memcached::CMD_TERMINATION_MSG, read_reply
 
     assert_get key, Memcached::END_MSG
@@ -56,10 +57,8 @@ class ServerTest < BaseTest
 
   def test_smaller_length_datablock
     incorrect_length = value.length - 4
-    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, incorrect_length, false, value, false
-
-    excepted_reply = data_block_length_error_msg incorrect_length, value
-    assert_equal excepted_reply, read_reply
+    msg = data_block_length_error_msg incorrect_length, value
+    assert_send_set key, flags, exptime, value, msg, incorrect_length
 
     assert_get key, Memcached::END_MSG
   end

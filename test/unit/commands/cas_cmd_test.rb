@@ -60,6 +60,17 @@ class Memcached::CasCommandTest < BaseTest
     assert_equal Memcached::CAS_KEY_TYPE_MSG, exception.message
   end
 
+  # Empty data block
+
+  def test_cas_empty_data_block
+    data_block = ''
+    parameters = [key.to_s, flags.to_s, exptime.to_s, data_block.length.to_s, cas_key.to_s]
+
+    assert_nothing_raised do
+      Memcached::CasCommand.new parameters, data_block
+    end
+  end
+
   # Test invalid number of parameters
 
   def test_default_parameters_max_length

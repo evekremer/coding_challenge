@@ -168,7 +168,7 @@ module Memcached
 
     def expired?(time)
       if time.is_a? Time
-        is_expired = time <= Time.now
+        is_expired = time.round <= Time.now.round
       else # never expires
         time_ = Integer time
         raise ArgumentError unless time_.zero?

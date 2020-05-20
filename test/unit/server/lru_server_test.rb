@@ -6,7 +6,7 @@ require_relative 'server_test_helper'
 
 # Test that inserts with full cache cause older data to be purged
 # in least recently used (LRU) order
-class LruServerTest < BaseTest
+class LruServerTest < ServerTestHelper
   DATA_BLOCK = 'd' * (Memcached::MAX_DATA_BLOCK_LENGTH / 2)
   KEY = 'key'
 
@@ -51,7 +51,7 @@ class LruServerTest < BaseTest
 
   def test_lru_set
     # Set new item, causes @@lru_key to be evicted
-    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, DATA_BLOCK.length, false, DATA_BLOCK, true
+    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, DATA_BLOCK.length, DATA_BLOCK, true
 
     send_get_cmd @@lru_key
     assert_equal Memcached::END_MSG, read_reply
@@ -68,7 +68,7 @@ class LruServerTest < BaseTest
     update_lru_key
 
     # Reach maximum capacity by setting 'key', causing @@lru_key to be evicted
-    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, DATA_BLOCK.length, false, DATA_BLOCK, true
+    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, DATA_BLOCK.length, DATA_BLOCK, true
 
     send_get_cmd @@lru_key
     assert_equal Memcached::END_MSG, read_reply
@@ -84,7 +84,7 @@ class LruServerTest < BaseTest
     read_reply(3)
 
     # Reach maximum capacity by setting 'key', causing @@lru_key to be evicted
-    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, DATA_BLOCK.length, false, DATA_BLOCK, true
+    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, DATA_BLOCK.length, DATA_BLOCK, true
 
     send_get_cmd @@lru_key
     assert_equal Memcached::END_MSG, read_reply
@@ -96,7 +96,7 @@ class LruServerTest < BaseTest
 
   def test_lru_append
     # Reach maximum capacity appending "#{KEY}36", causing @@lru_key to be evicted
-    send_storage_cmd Memcached::APPEND_CMD_NAME, "#{KEY}36", flags, exptime, DATA_BLOCK.length, false, DATA_BLOCK, true
+    send_storage_cmd Memcached::APPEND_CMD_NAME, "#{KEY}36", flags, exptime, DATA_BLOCK.length, DATA_BLOCK, true
 
     send_get_cmd @@lru_key
     assert_equal Memcached::END_MSG, read_reply
@@ -109,7 +109,7 @@ class LruServerTest < BaseTest
   def test_lru_replace
     # Reach maximum capacity replacing "#{KEY}33", causing @@lru_key to be evicted
     data_block = DATA_BLOCK * 2
-    send_storage_cmd Memcached::REPLACE_CMD_NAME, "#{KEY}33", flags, exptime, data_block.length, false, data_block, true
+    send_storage_cmd Memcached::REPLACE_CMD_NAME, "#{KEY}33", flags, exptime, data_block.length, data_block, true
 
     send_get_cmd @@lru_key
     assert_equal Memcached::END_MSG, read_reply

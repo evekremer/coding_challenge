@@ -3,7 +3,7 @@
 require_relative 'server_test_helper'
 
 # Unit test for Memcached::Server class
-class ServerSetTest < BaseTest
+class ServerSetTest < ServerTestHelper
   include Memcached::Mixin
 
   def test_set_simple
@@ -67,13 +67,13 @@ class ServerSetTest < BaseTest
   def test_set_key_control_chars_tab
     key = "key\twith_tabs"
     assert_send_set key, flags, exptime, value, Memcached::KEY_WITH_CONTROL_CHARS_MSG
-    assert_get key, Memcached::END_MSG
+    assert_get key, Memcached::KEY_WITH_CONTROL_CHARS_MSG
   end
 
   def test_set_key_multiple_control_char
     key = "\a\akey\bwith\vmultiple_control\f_chars"
     assert_send_set key, flags, exptime, value, Memcached::KEY_WITH_CONTROL_CHARS_MSG
-    assert_get key, Memcached::END_MSG
+    assert_get key, Memcached::KEY_WITH_CONTROL_CHARS_MSG
   end
 
   #=> Flags
@@ -152,13 +152,13 @@ class ServerSetTest < BaseTest
   def test_set_key_too_long
     key = 'k' * (Memcached::MAX_KEY_LENGTH + 1)
     assert_send_set key, flags, exptime, value, Memcached::KEY_TOO_LONG_MSG
-    assert_get key, Memcached::END_MSG
+    assert_get key, Memcached::KEY_TOO_LONG_MSG
   end
 
   #=> no_reply
 
   def test_set_no_reply
-    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, true
+    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, value, true
     assert_multine_get key, flags, value
   end
 

@@ -5,15 +5,10 @@ require_relative 'server_test_helper'
 # Unit test for Memcached::Server class
 # "append": means "add this data to an existing key after existing data".
 # "prepend": means "add this data to an existing key before existing data".
-class ServerPreAppendTest < BaseTest
+class ServerPreAppendTest < ServerTestHelper
   include Memcached::Mixin
 
   ###########     Test append     ###########
-
-  def assert_send_append(key, flags, exptime, value, msg = Memcached::STORED_MSG, length = value.length)
-    send_storage_cmd Memcached::APPEND_CMD_NAME, key, flags, exptime, length, value
-    assert_equal msg, read_reply
-  end
 
   def test_simple_append
     assert_send_set key, flags, exptime, value
@@ -22,7 +17,7 @@ class ServerPreAppendTest < BaseTest
   end
 
   def test_missing_key_append
-    assert_send_append key, flags, exptime, value
+    assert_send_append key, flags, exptime, value, Memcached::NOT_STORED_MSG
     assert_get key, Memcached::END_MSG
   end
 
@@ -40,18 +35,6 @@ class ServerPreAppendTest < BaseTest
 
     # flags ignored for append commands
     assert_multine_get key, flags, (value + new_value)
-  end
-
-  ##     Test invalid parameters
-
-  def test_invalid_length_parameter_append
-    assert_send_set key, flags, exptime, value
-
-    smaller_length = new_value.length - 3
-    exp_reply = data_block_length_error_msg smaller_length, new_value
-    assert_send_append key, flags, exptime, new_value, exp_reply, smaller_length
-
-    assert_multine_get key, flags, value
   end
 
   def test_value_too_long_append
@@ -82,7 +65,7 @@ class ServerPreAppendTest < BaseTest
   end
 
   def test_missing_key_prepend
-    assert_send_prepend key, flags, exptime, value
+    assert_send_prepend key, flags, exptime, value, Memcached::NOT_STORED_MSG
     assert_get key, Memcached::END_MSG
   end
 
@@ -100,18 +83,6 @@ class ServerPreAppendTest < BaseTest
 
     # flags ignored for prepend commands
     assert_multine_get key, flags, (new_value + value)
-  end
-
-  ##     Test invalid parameters
-
-  def test_invalid_length_parameter_prepend
-    assert_send_set key, flags, exptime, value
-
-    smaller_length = new_value.length - 3
-    exp_reply = data_block_length_error_msg smaller_length, new_value
-    assert_send_prepend key, flags, exptime, new_value, exp_reply, smaller_length
-
-    assert_multine_get key, flags, value
   end
 
   def test_value_too_long_prepend

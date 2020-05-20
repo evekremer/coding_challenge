@@ -3,7 +3,7 @@
 require_relative 'server_test_helper'
 
 # Unit test for Memcached::Server class
-class ServerConcurrencyTest < BaseTest
+class ServerConcurrencyTest < ServerTestHelper
   def test_multiple_threads_set_get
     Array.new(10) do |n|
       Thread.new do

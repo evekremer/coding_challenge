@@ -3,7 +3,7 @@
 require_relative 'server_test_helper'
 
 # Unit test for Memcached::Server class
-class ServerGetGetsTest < BaseTest
+class ServerGetGetsTest < ServerTestHelper
   ###########     Get     ###########
 
   def test_simple_multi_get
@@ -13,7 +13,7 @@ class ServerGetGetsTest < BaseTest
     # Set multiple values
     10.times do |i|
       key = "#{key}#{i}"
-      send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, true
+      send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, value, true
       expected_reply += expected_get_response key, flags, value.length, value, false, true
       keys[i] = key
     end
@@ -44,7 +44,7 @@ class ServerGetGetsTest < BaseTest
     # Set multiple empty values
     10.times do |i|
       key = "#{key}#{i}"
-      send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, true
+      send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, value, true
       expected_reply += expected_get_response key, flags, value.length, value, false, true
       keys[i] = key
     end
@@ -56,14 +56,14 @@ class ServerGetGetsTest < BaseTest
   end
 
   def test_some_missing_keys_multi_get
-    send_storage_cmd Memcached::SET_CMD_NAME, "#{key}1", flags, exptime, value.length, false, value
+    send_storage_cmd Memcached::SET_CMD_NAME, "#{key}1", flags, exptime, value.length, value
     read_reply
 
-    send_storage_cmd Memcached::SET_CMD_NAME, "#{key}3", flags + 1, exptime, value.length, false, value
+    send_storage_cmd Memcached::SET_CMD_NAME, "#{key}3", flags + 1, exptime, value.length, value
     read_reply
 
     exp_reply_multi = expected_get_response "#{key}1", flags, value.length, value, false, true
-    exp_reply_multi += expected_get_response "#{key}3", flags + 1, value.length, value, false
+    exp_reply_multi += expected_get_response "#{key}3", flags + 1, value.length, value
 
     keys = ["#{key}1", "#{key}2", "#{key}3", "#{key}4", "#{key}5"]
     send_get_multi_keys keys
@@ -78,7 +78,7 @@ class ServerGetGetsTest < BaseTest
 
   def test_get_expired
     exptime = -6
-    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, true
+    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, value, true
 
     send_get_cmd key
     assert_equal Memcached::END_MSG, read_reply
@@ -93,7 +93,7 @@ class ServerGetGetsTest < BaseTest
     # Set multiple values
     10.times do |i|
       key = "#{key}#{i}"
-      send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, true
+      send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, value, true
       expected_reply += expected_get_response key, flags, value.length, value, get_cas_key(key), true
       keys[i] = key
     end
@@ -124,7 +124,7 @@ class ServerGetGetsTest < BaseTest
     # Set multiple empty values
     10.times do |i|
       key = "#{key}#{i}"
-      send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, true
+      send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, value, true
       expected_reply += expected_get_response key, flags, value.length, value, get_cas_key(key), true
       keys[i] = key
     end
@@ -136,10 +136,10 @@ class ServerGetGetsTest < BaseTest
   end
 
   def test_some_missing_keys_multi_gets
-    send_storage_cmd Memcached::SET_CMD_NAME, "#{key}1", flags, exptime, value.length, false, value
+    send_storage_cmd Memcached::SET_CMD_NAME, "#{key}1", flags, exptime, value.length, value
     read_reply
 
-    send_storage_cmd Memcached::SET_CMD_NAME, "#{key}3", flags + 1, exptime, value.length, false, value
+    send_storage_cmd Memcached::SET_CMD_NAME, "#{key}3", flags + 1, exptime, value.length, value
     read_reply
 
     exp_reply_multi = expected_get_response "#{key}1", flags, value.length, value, get_cas_key("#{key}1"), true
@@ -158,7 +158,7 @@ class ServerGetGetsTest < BaseTest
 
   def test_gets_expired
     exptime = -6
-    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, false, value, true
+    send_storage_cmd Memcached::SET_CMD_NAME, key, flags, exptime, value.length, value, true
 
     send_get_cmd key, true
     assert_equal Memcached::END_MSG, read_reply

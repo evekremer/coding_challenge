@@ -28,6 +28,7 @@ module Memcached
           Thread.start(client_connection) do |conn|
             puts "Connection established => #{conn}"
             request_handler conn
+            puts "Connection closed => #{conn}"
           end
         end
         @server_socket.close
@@ -37,7 +38,7 @@ module Memcached
     def request_handler(connection)
       while (request_line = connection.gets)
         begin
-          message = invoke_cache_handler request_line, connection
+          message = invoke_cache_handler (parse_request_line request_line), connection
         rescue ArgumentClientError, TypeClientError => e
           # Clear buffer if there are remaining written bytes
           connection.read_nonblock MAX_DATA_BLOCK_LENGTH if connection.ready?
@@ -49,17 +50,16 @@ module Memcached
       end
 
       # Disconnect from the client
-      connection.close { puts "Connection closed => #{conn}" }
+      connection.close
     end
 
-    def invoke_cache_handler(request_line, connection)
-      parameters = parse_request_line request_line
-
-      if STORAGE_CMDS.include? parameters[0]
+    def invoke_cache_handler(parameters, connection)
+      cmd_name = parameters.shift
+      if STORAGE_CMDS.include? cmd_name
         data_block = read_data_block_request parameters[3], connection
-        @cache_handler.new_storage parameters[0], parameters, data_block
-      elsif RETRIEVAL_CMDS.include? parameters[0]
-        @cache_handler.new_retrieval parameters[0], parameters
+        @cache_handler.new_storage cmd_name, parameters, data_block
+      elsif RETRIEVAL_CMDS.include? cmd_name
+        @cache_handler.new_retrieval cmd_name, parameters
       else # Command name is not supported
         INVALID_COMMAND_NAME_MSG
       end
