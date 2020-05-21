@@ -88,7 +88,10 @@ module Memcached
     # Store data only if the server [does not / does] already hold data for key
     def add_replace(storage_obj)
       cache_has_key = @cache.key? storage_obj.key
-      if (!cache_has_key && storage_obj.command_name == ADD_CMD_NAME) || (cache_has_key && storage_obj.command_name == REPLACE_CMD_NAME)
+      store_data = (!cache_has_key && storage_obj.command_name == ADD_CMD_NAME)
+      store_data ||= (cache_has_key && storage_obj.command_name == REPLACE_CMD_NAME)
+
+      if store_data
         store_new_item storage_obj.key, storage_obj.flags, storage_obj.expdate, storage_obj.length, storage_obj.data_block
       else
         NOT_STORED_MSG

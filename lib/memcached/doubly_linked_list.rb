@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
+# Doubly linked lists allows to traverse the list
+# from tail to head and remove elements in constant time
 class DoublyLinkedList
+  # Each node contain three attributes:
+  # the value the element holds, and pointers to the next and previous nodes
   class Node
     attr_accessor :prev, :next, :data
 
@@ -41,20 +45,11 @@ class DoublyLinkedList
     return nil unless node
 
     if node == head
-      if head.next.nil?
-        self.head = self.tail = nil
-      else
-        self.head = head.next
-        head.prev = nil
-      end
+      remove_head
     elsif node == tail
-      self.tail = tail.prev
-      tail.next = nil
+      remove_tail
     else
-      p = node.prev
-      n = node.next
-      p&.next = n
-      n&.prev = p
+      update_node_pointers node
     end
 
     node.prev = node.next = nil
@@ -62,6 +57,27 @@ class DoublyLinkedList
   end
 
   private
+
+  def remove_tail
+    self.tail = tail.prev
+    tail.next = nil
+  end
+
+  def remove_head
+    if head.next.nil?
+      self.head = self.tail = nil
+    else
+      self.head = head.next
+      head.prev = nil
+    end
+  end
+
+  def update_node_pointers(node)
+    p = node.prev
+    n = node.next
+    p&.next = n
+    n&.prev = p
+  end
 
   # Sets the head of the list
   # Complexity: O(1)

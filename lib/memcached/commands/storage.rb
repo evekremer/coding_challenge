@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 module Memcached
-  # Storage command
+  # Datatype for storage command requests,
+  # encapsulates parameter validation
   class StorageCommand
     include Mixin
 

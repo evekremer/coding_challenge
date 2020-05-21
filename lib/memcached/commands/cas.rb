@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 module Memcached
+  # Datatype for cas command requests,
+  # encapsulates parameter validation
   class CasCommand < StorageCommand
     attr_reader :cas_key
 

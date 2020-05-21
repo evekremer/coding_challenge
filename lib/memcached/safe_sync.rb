@@ -3,14 +3,10 @@
 require 'monitor'
 
 module Memcached
-  # The intend of class "SafeSync" is to provide a multithread-safe cache acces:
+  # Provides a multithread-safe cache acces:
   # => Readers access cache only when there are no writers
   # => Writers access cache only when there are no readers or writers
-  # => Only one thread manipulate the state variables at a time
-
-  # In terms of reader-writers fairness:
-  # => Once a reader is waiting, readers will get in next
-  # => If a writer is waiting, one writer will get in next
+  # => Only one thread manipulates state variables at a time
   class SafeSync
     include MonitorMixin
     def initialize

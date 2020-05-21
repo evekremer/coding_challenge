@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 module Memcached
+  # Datatype for retrieval command requests,
+  # encapsulates parameter validation
   class RetrievalCommand
     include Mixin
     PARAMETERS_MIN_LENGTH_RETRIEVAL = 1
