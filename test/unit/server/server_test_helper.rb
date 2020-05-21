@@ -52,10 +52,10 @@ class ServerTestHelper < BaseTest
     assert_equal msg, read_reply
   end
 
-  def assert_multine_get(key, flags, value, times = 3)
-    send_get_cmd key
-    expected_msg = expected_get_response key, flags, value.length, value
-    assert_equal expected_msg, read_reply(times)
+  def assert_multine_get(key, flags, value, times = 3, cas_key = false)
+    send_get_cmd key, cas_key
+    msg = expected_get_response key, flags, value.length, value, cas_key
+    assert_equal msg, read_reply(times)
   end
 
   # Returns cas key returned from the "gets" command of an existing key
@@ -92,11 +92,5 @@ class ServerTestHelper < BaseTest
 
   def wait_for_purge_exec
     sleep(Memcached::PURGE_EXPIRED_KEYS_FREQUENCY_SECS + 2)
-  end
-
-  def assert_multine_gets(key, flags, value, cas_key, times = 3)
-    send_get_cmd key, true
-    expected_msg = expected_get_response key, flags, value.length, value, cas_key
-    assert_equal expected_msg, read_reply(times)
   end
 end

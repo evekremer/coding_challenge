@@ -33,7 +33,7 @@ class ServerCasTest < ServerTestHelper
     assert_send_cas key, new_flags, exptime, new_value, cas_key
 
     # Get the stored item with cas update
-    assert_multine_gets key, new_flags, new_value, (cas_key + 1)
+    assert_multine_get key, new_flags, new_value, 3, (cas_key + 1)
   end
 
   def test_exists_cas
@@ -44,7 +44,7 @@ class ServerCasTest < ServerTestHelper
     assert_send_cas key, new_flags, exptime, new_value, (cas_key + 10), Memcached::EXISTS_MSG
 
     # Get the initial item without updates
-    assert_multine_gets key, flags, value, cas_key
+    assert_multine_get key, flags, value, 3, cas_key
   end
 
   def test_not_found_cas
@@ -60,7 +60,7 @@ class ServerCasTest < ServerTestHelper
     send_cas_cmd key, new_flags, exptime, new_value.length, new_value, cas_key, true
 
     # Get the stored item with cas update
-    assert_multine_gets key, new_flags, new_value, (cas_key + 1)
+    assert_multine_get key, new_flags, new_value, 3, (cas_key + 1)
   end
 
   # Test expiration time
