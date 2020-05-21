@@ -3,7 +3,9 @@
 require 'io/wait'
 
 module Memcached
-  # Server class
+  # The server listens for new connections on a given TCP port
+  # And establishes connections with Memcached clients
+  # Receives commands requests and responds accordingly
   class Server
     include Mixin
 
@@ -38,7 +40,8 @@ module Memcached
     def request_handler(connection)
       while (request_line = connection.gets)
         begin
-          message = invoke_cache_handler (parse_request_line request_line), connection
+          parameters = parse_request_line request_line
+          message = invoke_cache_handler parameters, connection
         rescue ArgumentClientError, TypeClientError => e
           # Clear buffer if there are remaining written bytes
           connection.read_nonblock MAX_DATA_BLOCK_LENGTH if connection.ready?

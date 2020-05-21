@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 
 module Memcached
-  # CacheHandler class
+  # Implements storage/retrieval requests handlers:
+  # => Handles data insertions/retrievals to/from stored LRUCache
+  # => Uses monitor implementation for multithread-safe read/write operations
+  # => Informs accordingly the result of each request
   class CacheHandler
     include Mixin
 

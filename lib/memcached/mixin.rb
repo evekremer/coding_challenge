@@ -20,19 +20,21 @@ module Memcached
   ##### Server request messages
 
   # Storage command parameters
-  SET_CMD_NAME = 'set'
-  ADD_CMD_NAME = 'add'
-  REPLACE_CMD_NAME = 'replace'
-  PREPEND_CMD_NAME = 'prepend'
-  APPEND_CMD_NAME = 'append'
-  CAS_CMD_NAME = 'cas'
-  STORAGE_CMDS = [SET_CMD_NAME, ADD_CMD_NAME, REPLACE_CMD_NAME, CAS_CMD_NAME, PREPEND_CMD_NAME, APPEND_CMD_NAME].freeze
+  STORAGE_CMDS = [
+    SET_CMD_NAME = 'set',
+    ADD_CMD_NAME = 'add',
+    REPLACE_CMD_NAME = 'replace',
+    PREPEND_CMD_NAME = 'prepend',
+    APPEND_CMD_NAME = 'append',
+    CAS_CMD_NAME = 'cas'
+  ].freeze
   NO_REPLY = 'noreply'
 
   # Retrieval command parameters
-  GET_CMD_NAME = 'get'
-  GETS_CMD_NAME = 'gets'
-  RETRIEVAL_CMDS = [GET_CMD_NAME, GETS_CMD_NAME].freeze
+  RETRIEVAL_CMDS = [
+    GET_CMD_NAME = 'get',
+    GETS_CMD_NAME = 'gets'
+  ].freeze
 
   ##### Server response messages
 
@@ -71,6 +73,7 @@ module Memcached
   class ArgumentClientError < StandardError; end
   class TypeClientError < StandardError; end
 
+  # Contains methods for use by other classes
   module Mixin
     def data_block_length_error_msg(length, data_block)
       "#{CLIENT_ERROR}<length> (#{length}) is not equal to the length of the item's data_block (#{data_block.length})#{CMD_ENDING}"

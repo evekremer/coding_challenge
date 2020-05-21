@@ -10,7 +10,20 @@ require_relative 'server_test_helper'
 class ServerCasTest < ServerTestHelper
   include Memcached::Mixin
 
-  ## Cas test
+  def send_cas_cmd(key, flags, exptime, length, value, unique_cas_key, noreply = false)
+    request = "#{Memcached::CAS_CMD_NAME} #{key} #{flags} #{exptime} #{length} #{unique_cas_key}"
+    request += " #{Memcached::NO_REPLY}" if noreply
+    request += Memcached::CMD_ENDING
+
+    socket_puts request, value
+  end
+
+  def assert_send_cas(key, flags, exptime, value, unique_cas_key, msg = Memcached::STORED_MSG, length = value.length, noreply = false)
+    send_cas_cmd key, flags, exptime, length, value, unique_cas_key, noreply
+    assert_equal msg, read_reply
+  end
+
+  ###########     Test cas     ###########
 
   def test_simple_cas
     assert_send_set key, flags, exptime, value

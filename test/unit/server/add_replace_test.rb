@@ -9,12 +9,17 @@ require_relative 'server_test_helper'
 
 # Unit test for Memcached::Server class
 class ServerAddReplaceTest < ServerTestHelper
-  ###########     Add     ###########
-
   def assert_send_add(key, flags, exptime, value, msg = Memcached::STORED_MSG, length = value.length)
     send_storage_cmd Memcached::ADD_CMD_NAME, key, flags, exptime, length, value
     assert_equal msg, read_reply
   end
+
+  def assert_send_replace(key, flags, exptime, value, msg = Memcached::STORED_MSG, length = value.length)
+    send_storage_cmd Memcached::REPLACE_CMD_NAME, key, flags, exptime, length, value
+    assert_equal msg, read_reply
+  end
+
+  ###########     Test add     ###########
 
   def test_simple_add
     assert_send_add key, flags, exptime, value
@@ -45,7 +50,7 @@ class ServerAddReplaceTest < ServerTestHelper
     assert_multine_get key, flags, value
   end
 
-  ###########     Replace     ###########
+  ###########     Test replace     ###########
 
   def test_simple_replace
     assert_send_set key, flags, exptime, value

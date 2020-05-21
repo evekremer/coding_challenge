@@ -3,6 +3,9 @@
 require_relative '../../test_helper'
 
 class ServerTestHelper < BaseTest
+  MAX_LENGTH_DATABLOCK = 'b' * Memcached::MAX_DATA_BLOCK_LENGTH
+  SOCKET_ADDRESS = 'localhost'
+  SOCKET_PORT = 9999
   def setup
     @socket = nil
   end
@@ -14,7 +17,7 @@ class ServerTestHelper < BaseTest
   def socket
     return @socket if @socket
 
-    @socket = TCPSocket.open('localhost', 9999)
+    @socket = TCPSocket.open(SOCKET_ADDRESS, SOCKET_PORT)
   end
 
   def assert_send_set(key, flags, exptime, value, msg = Memcached::STORED_MSG, length = value.length)
@@ -81,7 +84,9 @@ class ServerTestHelper < BaseTest
 
   def read_reply(num_lines = 1)
     reply = ''
-    num_lines.times { reply += socket.gets }
+    num_lines.times do
+      reply += socket.gets
+    end
     reply
   end
 
@@ -89,32 +94,9 @@ class ServerTestHelper < BaseTest
     sleep(Memcached::PURGE_EXPIRED_KEYS_FREQUENCY_SECS + 2)
   end
 
-  def send_cas_cmd(key, flags, exptime, length, value, unique_cas_key, noreply = false)
-    request = "#{Memcached::CAS_CMD_NAME} #{key} #{flags} #{exptime} #{length} #{unique_cas_key}"
-    request += " #{Memcached::NO_REPLY}" if noreply
-    request += Memcached::CMD_ENDING
-
-    socket_puts request, value
-  end
-
-  def assert_send_cas(key, flags, exptime, value, unique_cas_key, msg = Memcached::STORED_MSG, length = value.length, noreply = false)
-    send_cas_cmd key, flags, exptime, length, value, unique_cas_key, noreply
-    assert_equal msg, read_reply
-  end
-
   def assert_multine_gets(key, flags, value, cas_key, times = 3)
     send_get_cmd key, true
     expected_msg = expected_get_response key, flags, value.length, value, cas_key
     assert_equal expected_msg, read_reply(times)
-  end
-
-  def assert_send_replace(key, flags, exptime, value, msg = Memcached::STORED_MSG, length = value.length)
-    send_storage_cmd Memcached::REPLACE_CMD_NAME, key, flags, exptime, length, value
-    assert_equal msg, read_reply
-  end
-
-  def assert_send_append(key, flags, exptime, value, msg = Memcached::STORED_MSG, length = value.length)
-    send_storage_cmd Memcached::APPEND_CMD_NAME, key, flags, exptime, length, value
-    assert_equal msg, read_reply
   end
 end

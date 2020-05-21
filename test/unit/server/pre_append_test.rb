@@ -8,6 +8,16 @@ require_relative 'server_test_helper'
 class ServerPreAppendTest < ServerTestHelper
   include Memcached::Mixin
 
+  def assert_send_append(key, flags, exptime, value, msg = Memcached::STORED_MSG, length = value.length)
+    send_storage_cmd Memcached::APPEND_CMD_NAME, key, flags, exptime, length, value
+    assert_equal msg, read_reply
+  end
+
+  def assert_send_prepend(key, flags, exptime, value, msg = Memcached::STORED_MSG, length = value.length)
+    send_storage_cmd Memcached::PREPEND_CMD_NAME, key, flags, exptime, length, value
+    assert_equal msg, read_reply
+  end
+
   ###########     Test append     ###########
 
   def test_simple_append
@@ -48,11 +58,6 @@ class ServerPreAppendTest < ServerTestHelper
   end
 
   ###########     Test prepend     ###########
-
-  def assert_send_prepend(key, flags, exptime, value, msg = Memcached::STORED_MSG, length = value.length)
-    send_storage_cmd Memcached::PREPEND_CMD_NAME, key, flags, exptime, length, value
-    assert_equal msg, read_reply
-  end
 
   def test_simple_prepend
     v2 = 'end'

@@ -1,6 +1,12 @@
 # frozen_string_literal: true
 
 module Memcached
+  # LRU cache: if maximum capacity is reached, elements are purged in LRU order
+
+  # Implementation:
+  # => Access LRU element in O(1) time looking at the tail of doubly linked list
+  # => Maps items to linked list nodes
+  #    Allows to find an element in the cache's linked list in O(1) time
   class LRUCache
     include Mixin
     NEGATIVE_MAX_CAPACITY_ERROR = '<max_capacity> must not be negative'
@@ -9,16 +15,11 @@ module Memcached
 
     def initialize(max_capacity)
       @total_length_stored = 0
-
-      # Maps items to linked list nodes
-      # Allows to find an element in the cache's linked list in O(1) time
       @cache = {}
 
       # Stores the most-recently used item at the head of the list
       #   and the least-recently used item at the tail
-      # Access LRU element in O(1) time looking at the tail of the list
       @lru_linked_list = DoublyLinkedList.new
-
       raise ArgumentError, NEGATIVE_MAX_CAPACITY_ERROR if max_capacity < 1
 
       @max_capacity = max_capacity

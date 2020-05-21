@@ -4,6 +4,7 @@ require_relative '../mixin'
 require 'socket'
 
 module Memcached
+  # Provides a short demo of client-server connection, including sample commands
   class ClientDemo
     def initialize(socket)
       @socket = socket
@@ -46,6 +47,7 @@ module Memcached
       request += " #{@cas_key}" if @cas_key
       request += " #{@no_reply}" if @no_reply
       request += Memcached::CMD_ENDING.to_s
+      request
     end
 
     def storage_request_handler(length = false)

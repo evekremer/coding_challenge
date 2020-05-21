@@ -3,6 +3,7 @@
 require 'socket'
 
 module Memcached
+  # Allows to send requests to server and receive responses from command line
   class Client
     def initialize(socket)
       @socket = socket
